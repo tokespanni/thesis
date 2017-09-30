@@ -37,6 +37,7 @@ class Main(QGLWidget):
 		glAttachShader(self.program, vertex_shader_id)
 		glAttachShader(self.program, fragment_shader_id)
 		glLinkProgram(self.program)
+			
 		message = glGetProgramInfoLog(self.program)
 		if message:
 			print("[Shader linking failed]")
@@ -46,6 +47,8 @@ class Main(QGLWidget):
 		glDeleteShader(fragment_shader_id)
 		glUseProgram(0)
 		self.genBuffers()
+		self.texLoc = glGetUniformLocation( self.program, "texImage" )
+		self.texID = self.loadTexture()
 		
 	#render
 	def paintGL(self):
@@ -67,6 +70,7 @@ class Main(QGLWidget):
 		
 		self.camera.update(self.delta_time)
 		
+		#render
 		matWorld = Matrix4()
 		matWorldIT = matWorld.inverse().transposed()
 		mvp = self.camera.matViewProj * matWorld
@@ -80,10 +84,15 @@ class Main(QGLWidget):
 		glClearColor(0.2, 0.3, 0.4, 1)
 		glClear(GL_COLOR_BUFFER_BIT)
 		
+		glActiveTexture(GL_TEXTURE0)
+		glBindTexture(GL_TEXTURE_2D, self.texID)
+		glUniform1i(	self.texLoc, 0)
+
 		glBindVertexArray(self.vaos)
 		
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
 		glBindVertexArray(0)
+		glBindTexture(GL_TEXTURE_2D, 0)
 		glUseProgram(0)
 		
 		self.update()
@@ -123,29 +132,47 @@ class Main(QGLWidget):
 		
 		float_size = sizeof(c_float)
 		
-		#    x, y, z,    r, g, b
+		#    x, y, z,    r, g, b,     s, t
 		self.vertices = np.array( [
-			-1, 0, -1,   1, 0, 0,
-			-1, 0, 1,   0, 1, 0,
-			 1, 0, -1,   0, 0, 1,
-			 1, 0, 1,   1, 1, 1,
+			-1, 0, -1,  1, 0, 0,	 0, 0,
+			-1, 0,  1,  0, 1, 0,     0, 1,
+			 1, 0, -1,  0, 0, 1,	 1, 0,
+			 1, 0,  1,  1, 1, 1, 	 1, 1,
 		
 		], dtype = 'f')
 		
 		glBindVertexArray(self.vaos)
 		glBindBuffer(GL_ARRAY_BUFFER, self.vbos)
-		glBufferData(GL_ARRAY_BUFFER, float_size*(3+3)*4, self.vertices, GL_STREAM_DRAW)
+		glBufferData(GL_ARRAY_BUFFER, float_size*(3+3+2)*4, self.vertices, GL_STREAM_DRAW)
 		glEnableVertexAttribArray(0)
-		glVertexAttribPointer(0, 3, GL_FLOAT, False, float_size*(3+3), c_void_p(0 * float_size) )
+		glVertexAttribPointer(0, 3, GL_FLOAT, False, float_size*(3+3+2), c_void_p(0 * float_size) )
 		glEnableVertexAttribArray(1)
-		glVertexAttribPointer(1, 3, GL_FLOAT, False, float_size*(3+3), c_void_p(3 * float_size) )
+		glVertexAttribPointer(1, 3, GL_FLOAT, False, float_size*(3+3+2), c_void_p(3 * float_size) )
+		glEnableVertexAttribArray(2)
+		glVertexAttribPointer(2, 2, GL_FLOAT, False, float_size*(3+3+2), c_void_p(6 * float_size) )
 		
-		glDisable(GL_CULL_FACE)
-	"""
-	void MouseDown(SDL_MouseButtonEvent&);
-	void MouseUp(SDL_MouseButtonEvent&);
-	void MouseWheel(SDL_MouseWheelEvent&);
-	"""	
+		#glEnable(GL_CULL_FACE)
+		
+	def loadTexture(self):
+		textureSurface = pygame.image.load('borisz.png')
+		textureData = pygame.image.tostring(textureSurface, "RGBA", 1)
+		width = textureSurface.get_width()
+		height = textureSurface.get_height()
+
+		glEnable(GL_TEXTURE_2D)
+		texid = glGenTextures(1)
+
+		glBindTexture(GL_TEXTURE_2D, texid)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height,
+					 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData)
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+
+		return texid
+	
 		
 	def keyPressEvent(self, e):
 		self.camera.keyboardDown(e)

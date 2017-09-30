@@ -10,7 +10,6 @@ import numpy as np
 from numpy import linalg as LA
 import time
 import math
-from util import *
 sys.path.insert(0, 'C:/Users/Panni/thesis_in_Python/pyeuclid')
 from euclid import *
 
@@ -71,8 +70,8 @@ class Camera():
 			self.goFw = 0
 			
 	def mouseMove(self, e, deltatime):
-		self.u += (e.x() - self.old_x)*deltatime
-		self.v += (e.y() - self.old_y)*deltatime
+		self.u += (e.x() - self.old_x)*deltatime*0.5
+		self.v -= (e.y() - self.old_y)*deltatime*0.5
 		epsilon = 0.001
 		self.v = max(-math.pi/2 + epsilon , min(self.v, math.pi/2-epsilon))
 		self.old_x = e.x()
