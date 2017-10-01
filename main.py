@@ -3,9 +3,8 @@ from OpenGL.GLU import *
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtOpenGL import *
 import numpy as np
-from numpy import linalg as LA
 import time
-from ctypes import sizeof, c_float, c_void_p
+from ctypes import sizeof, c_float, c_void_p, c_int
 import math
 from camera import *
 import sys
@@ -23,22 +22,39 @@ class Main(QGLWidget):
 		self.fps_frame_count = 0		
 		self.times = []
 		self.program = None
+		self.photon_birth_program = None
+		self.photon_simulation_program = None
+		self.param_program = None
 		self.camera = Camera()
 		self.last_time = 0
 		self.delta_time = 0
-		#self.setMouseTracking(True)
-
-	def initializeGL(self):
-		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )
 		
-		self.program = glCreateProgram()
-		vertex_shader_id    = self.load_and_compile_shader(GL_VERTEX_SHADER, "normalRender.vert")
-		fragment_shader_id  = self.load_and_compile_shader(GL_FRAGMENT_SHADER, "normalRender.frag")
-		glAttachShader(self.program, vertex_shader_id)
-		glAttachShader(self.program, fragment_shader_id)
-		glLinkProgram(self.program)
-			
-		message = glGetProgramInfoLog(self.program)
+		self.max_photons = 1024*16
+		self.photon_birth_count = 64
+		
+		#self.setMouseTracking(True)
+		
+	def compute_program(self, shader_file):
+		program = glCreateProgram()
+		compute_shader_id = self.load_and_compile_shader(GL_COMPUTE_SHADER, shader_file)
+		glAttachShader(program, compute_shader_id)
+		glLinkProgram(program)
+		message = glGetProgramInfoLog(program)
+		if message:
+			print("[Shader linking failed]")
+			print(message)
+		glDeleteShader(compute_shader_id)
+		glUseProgram(0)
+		return program
+		
+	def render_program(self, vertex_file, fragment_file):
+		program = glCreateProgram()
+		vertex_shader_id    = self.load_and_compile_shader(GL_VERTEX_SHADER, vertex_file)
+		fragment_shader_id  = self.load_and_compile_shader(GL_FRAGMENT_SHADER, fragment_file)
+		glAttachShader(program, vertex_shader_id)
+		glAttachShader(program, fragment_shader_id)
+		glLinkProgram(program)
+		message = glGetProgramInfoLog(program)
 		if message:
 			print("[Shader linking failed]")
 			print(message)
@@ -46,7 +62,17 @@ class Main(QGLWidget):
 		glDeleteShader(vertex_shader_id)
 		glDeleteShader(fragment_shader_id)
 		glUseProgram(0)
+		return program
+		
+	def initializeGL(self):
+		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )
+		self.photon_birth_program = self.compute_program("birthOfPhotons.compute")
+		self.photon_simulation_program = self.compute_program("simulationOfPhotons.compute")
+		self.program = self.render_program("normalRender.vert", "normalRender.frag")
+		self.debugProgram = self.render_program("debug.vert", "debug.frag")
+		#self.param_program = self.render_program("parametricSurface.vert", "parametricSurface.frag") 
 		self.genBuffers()
+		glPointSize(3.0);
 		self.texLoc = glGetUniformLocation( self.program, "texImage" )
 		self.texID = self.loadTexture()
 		
@@ -70,6 +96,32 @@ class Main(QGLWidget):
 		
 		self.camera.update(self.delta_time)
 		
+		glUseProgram(self.photon_birth_program)
+		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, self.atomic)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, self.posBuffer)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self.speedBuffer)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, self.emptyIndices)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, self.lightSourceBuffer)
+		glDispatchCompute(self.photon_birth_count,1,1)
+		glUseProgram(0)
+		
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT)
+		
+		glUseProgram(self.photon_simulation_program)
+		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, self.atomic)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, self.posBuffer)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self.speedBuffer)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, self.emptyIndices)
+		glUniform1f(0, self.delta_time)
+		glDispatchCompute(self.max_photons, 1, 1)
+		glUseProgram(0)
+		
+		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)
+		glFinish()
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self.atomic)
+		atomicCountDebug = glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER,0,1*sizeof(c_int))
+		asd = atomicCountDebug[3]*256*256*256+atomicCountDebug[2]*256*256 + atomicCountDebug[1]*256 +atomicCountDebug[0] - 1073741824
+		print "atomicCountDebug = ", asd
 		#render
 		matWorld = Matrix4()
 		matWorldIT = matWorld.inverse().transposed()
@@ -86,7 +138,7 @@ class Main(QGLWidget):
 		
 		glActiveTexture(GL_TEXTURE0)
 		glBindTexture(GL_TEXTURE_2D, self.texID)
-		glUniform1i(	self.texLoc, 0)
+		glUniform1i(self.texLoc, 0)
 
 		glBindVertexArray(self.vaos)
 		
@@ -94,6 +146,13 @@ class Main(QGLWidget):
 		glBindVertexArray(0)
 		glBindTexture(GL_TEXTURE_2D, 0)
 		glUseProgram(0)
+		
+		glUseProgram(self.debugProgram)
+		glBindVertexArray(self.debugVAO)
+		glDrawArrays(GL_POINTS, 0, self.max_photons)
+		glBindVertexArray(0)
+		glUseProgram(0)
+		
 		
 		self.update()
 		
@@ -122,8 +181,6 @@ class Main(QGLWidget):
 		
 		return shader_id
 		
-	def vec3toNp(vec3):
-		return np.array(vec3.x,vec3.y,vec3.z, dtype='f')
 	
 	def genBuffers(self):
 		# generate VAO, VBO
@@ -131,9 +188,10 @@ class Main(QGLWidget):
 		self.vbos = glGenBuffers(1)
 		
 		float_size = sizeof(c_float)
+		int_size = sizeof(c_int)
 		
 		#    x, y, z,    r, g, b,     s, t
-		self.vertices = np.array( [
+		vertices = np.array( [
 			-1, 0, -1,  1, 0, 0,	 0, 0,
 			-1, 0,  1,  0, 1, 0,     0, 1,
 			 1, 0, -1,  0, 0, 1,	 1, 0,
@@ -143,7 +201,7 @@ class Main(QGLWidget):
 		
 		glBindVertexArray(self.vaos)
 		glBindBuffer(GL_ARRAY_BUFFER, self.vbos)
-		glBufferData(GL_ARRAY_BUFFER, float_size*(3+3+2)*4, self.vertices, GL_STREAM_DRAW)
+		glBufferData(GL_ARRAY_BUFFER, float_size*(3+3+2)*4, vertices, GL_STREAM_DRAW)
 		glEnableVertexAttribArray(0)
 		glVertexAttribPointer(0, 3, GL_FLOAT, False, float_size*(3+3+2), c_void_p(0 * float_size) )
 		glEnableVertexAttribArray(1)
@@ -152,6 +210,47 @@ class Main(QGLWidget):
 		glVertexAttribPointer(2, 2, GL_FLOAT, False, float_size*(3+3+2), c_void_p(6 * float_size) )
 		
 		#glEnable(GL_CULL_FACE)
+		
+		light_sources = np.array([0,0], dtype = 'f')
+		self.lightSourceBuffer = glGenBuffers(1)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*(2), light_sources, GL_STREAM_DRAW)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+		
+		
+		indices = np.arange(self.max_photons, dtype = 'i')
+		self.emptyIndices = glGenBuffers(1)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.emptyIndices)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(c_int)*self.max_photons, indices, GL_STREAM_DRAW)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+		
+		positions = np.zeros(2*self.max_photons, dtype = 'f')
+		self.posBuffer = glGenBuffers(1)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.posBuffer)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*(2*self.max_photons), positions, GL_STREAM_DRAW)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+		
+		speeds = np.zeros(2*self.max_photons, dtype = 'f')
+		self.speedBuffer = glGenBuffers(1)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.speedBuffer)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*(2*self.max_photons), speeds, GL_STREAM_DRAW)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+		
+		self.debugVAO = glGenVertexArrays(1)
+		glBindVertexArray(self.debugVAO)
+		
+		glBindBuffer(GL_ARRAY_BUFFER, self.posBuffer)
+		glEnableVertexAttribArray(0)
+		glVertexAttribPointer(0, 2, GL_FLOAT, False, float_size*2, c_void_p(0 * float_size) )
+		
+		glBindBuffer(GL_ARRAY_BUFFER, self.speedBuffer)
+		glEnableVertexAttribArray(1)
+		glVertexAttribPointer(1, 2, GL_FLOAT, False, float_size*2, c_void_p(0 * float_size) )
+		
+		self.atomic = glGenBuffers(1)
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self.atomic)
+		glBufferData(GL_ATOMIC_COUNTER_BUFFER, int_size, np.array([1073741824+self.max_photons-1], dtype = 'l'), GL_DYNAMIC_DRAW)
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0)
 		
 	def loadTexture(self):
 		textureSurface = pygame.image.load('borisz.png')
