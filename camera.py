@@ -15,9 +15,8 @@ from euclid import *
 
 class Camera():
 	#public
-	def __init__(self, eye = Vector3(5,5,5), at = Vector3(), up = Vector3(0,1,0)):
+	def __init__(self, eye = Vector3(10,10,10), at = Vector3(), up = Vector3(0,1,0)):
 		self.lookAt(eye, at, up)
-		
 		self.viewMatrix  = Matrix4()
 		self.setProjMatrix(45.0, 640/480.0, 0.001, 1000.0)
 		self.setViewMatrix(eye);
@@ -25,7 +24,7 @@ class Camera():
 		self.goRight = 0.0
 		self.old_x = 0
 		self.old_y = 0
-		
+		self.dist = 2
 		self.speed = 2.0
 			
 	def update(self, deltatime):
@@ -41,9 +40,7 @@ class Camera():
 		forward = -toeye
 		right = forward.cross(self.up).normalize()
 		self.at  += forward*deltatime*self.speed*self.goFw + right*deltatime*self.speed*self.goRight
-		
-		eye = self.at + toeye
-		
+		eye = self.at + (toeye * self.dist)
 		self.setViewMatrix(eye);
 	
 	def setSpeed(self, val):
@@ -62,6 +59,8 @@ class Camera():
 			self.goFw = 1
 		if e.key() == Qt.Key_Down or e.key() == Qt.Key_S:
 			self.goFw = -1
+		if e.key() == Qt.Key_C:
+			self.toCenter()
 			
 	def keyboardUp(self, e):
 		if e.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_A, Qt.Key_D]:
@@ -76,6 +75,9 @@ class Camera():
 		self.v = max(-math.pi/2 + epsilon , min(self.v, math.pi/2-epsilon))
 		self.old_x = e.x()
 		self.old_y = e.y()
+	
+	def mouseWheel(self, delta):
+		self.dist *= 1+0.3*delta
 	
 	def click(self, e):
 		if e.button() == Qt.LeftButton:
@@ -102,5 +104,6 @@ class Camera():
 		self.matViewProj = self.matProj * self.viewMatrix
 
 	def toCenter(self):
-		self.lookAt(Vector3(5,5,5), Vector3(), Vector3(0,1,0))
-		self.setViewMatrix(Vector3(5,5,5))
+		self.lookAt(Vector3(10,10,10), Vector3(), Vector3(0,1,0))
+		self.setViewMatrix(Vector3(10,10,10))
+		self.dist = 1

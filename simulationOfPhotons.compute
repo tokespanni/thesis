@@ -4,35 +4,52 @@ layout(local_size_x = 1, local_size_y = 1) in;
 
 layout(binding = 0) uniform atomic_uint counter;
 
-restrict layout(std430, binding = 1) buffer posBuffer
+struct photon
 {
-	vec2 pos[];
+	vec3 color;
+	float birthTime;
+	vec2 speed;
+	float power;
+	float dummy;
 };
-restrict layout(std430, binding = 2) buffer speedBuffer
+restrict layout(std430, binding = 1) buffer photonBuffer
 {
-	vec2 speed[];
+	photon photons[];
 };
-restrict layout(std430, binding = 3) buffer emptyIndices
+
+restrict layout(std430, binding = 2) buffer emptyIndices
 {
 	int ind[];
 };
-layout(location = 0) uniform float time;
+
+restrict layout(std430, binding = 3) buffer posBuffer1
+{
+	vec2 pos1[];
+};
+restrict layout(std430, binding = 4) buffer posBuffer2
+{
+	vec2 pos2[];
+};
+layout(location = 0) uniform float deltaTime;
+layout(location = 1) uniform float totalTime;
 
 void main()
 {	
 	uint index = gl_GlobalInvocationID.x;
-	if(speed[index] == vec2(0)) return;
+	//photon p; = photons[index];
+	if(photons[index].speed == vec2(0)) return;
 	
 	//move photon
-	pos[index].x += speed[index].x * time*0.5;
-	pos[index].y += speed[index].y * time*0.5;
+	pos2[index].x = pos1[index].x + photons[index].speed.x * deltaTime*0.5;
+	pos2[index].y = pos1[index].y + photons[index].speed.y * deltaTime*0.5;
 	
-	if (length(pos[index]) > 0.90)
+	if (length(pos2[index]) > 0.90)
 	{
 		int i = int(atomicCounterIncrement(counter) - 1073741824);
 		ind[i] = int(index);
-		pos[index] = vec2(0.75, 0.75);
-		speed[index] = vec2(0, 0);
+		pos1[index] = vec2(0.75, 0.75);
+		pos2[index] = vec2(0.75, 0.75);
+		photons[index].speed = vec2(0, 0);
 	}
 	
 }
