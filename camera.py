@@ -47,8 +47,8 @@ class Camera():
 		self.speed = val
 		
 	def resize(self, w, h):
-		self.matProj = perspective(45.0, w/h, 0.01, 1000.0)
-		self.matViewProj = self.matProj * self.viewMatrix
+		self.projMatrix = perspective(45.0, w/h, 0.01, 1000.0)
+		self.matViewProj = self.projMatrix * self.viewMatrix
 	
 	def keyboardDown(self, e):
 		if e.key() == Qt.Key_Left or e.key() == Qt.Key_A :
@@ -96,12 +96,12 @@ class Camera():
 		self.at = at		
 		
 	def setProjMatrix(self, angle, aspect, zn, zf):
-		self.matProj = Matrix4.new_perspective(angle, aspect, zn, zf)
-		self.matViewProj = self.matProj * self.viewMatrix
+		self.projMatrix = Matrix4.new_perspective(angle, aspect, zn, zf)
+		self.matViewProj = self.projMatrix * self.viewMatrix
 	
 	def setViewMatrix(self, eye):
 		self.viewMatrix = Matrix4.new_look_at(eye, self.at, self.up)
-		self.matViewProj = self.matProj * self.viewMatrix
+		self.matViewProj = self.projMatrix * self.viewMatrix
 
 	def toCenter(self):
 		self.lookAt(Vector3(10,10,10), Vector3(), Vector3(0,1,0))

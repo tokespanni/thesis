@@ -36,7 +36,6 @@ layout(location = 1) uniform float totalTime;
 void main()
 {	
 	uint index = gl_GlobalInvocationID.x;
-	//photon p; = photons[index];
 	if(photons[index].speed == vec2(0)) return;
 	
 	//move photon

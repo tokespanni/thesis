@@ -16,7 +16,10 @@ struct light
 {
 	vec2 pos;
 	float power;
-	float dummy;
+	float c_photon;
+	float i_photon_start;
+	float i_photon_end;
+	vec2 dummy;
 };
 restrict layout(std430, binding = 1) buffer photonBuffer
 {
@@ -43,26 +46,15 @@ layout(location = 1) uniform int photonBirthCount;
 layout(location = 2) uniform int lightSourceNum;
 layout(location = 3) uniform float totalPower;
 
-float debug_light_powers[2] = {1,1};
-vec2 debug_light_pos[2] = {vec2(-0.5),vec2(0.5)};
-
-ivec3 photon_indices()
+vec3 photon_pos_angle()
 {
-	float sumOfPowers = 0;
-	int light_index = 0;
-	while(sumOfPowers / totalPower <= gl_GlobalInvocationID.x / float(1024))
-	{
-		sumOfPowers += debug_light_powers[light_index];
-		++light_index;
-		//if(light_index>2) break; // ha ez nincs kikommentelve, akkor működik
-	}
-	--light_index;
-	int lastplusonephotonindex = int(sumOfPowers*float(1024));
-	sumOfPowers -= debug_light_powers[light_index];
-	int photon_index = int(sumOfPowers*float(1024));
-	
-	int sumOfPhotons = lastplusonephotonindex - photon_index;
-	return ivec3(light_index, photon_index, sumOfPhotons);
+	int ind = int(gl_GlobalInvocationID.x); //which photon
+	int i = 0;
+	while(ind < lights[i].i_photon_start || ind > lights[i].i_photon_end) {i++;} //lightSourse index
+	//i--;
+	const float pi = 3.141592;
+	float alpha = 2.0 * pi * float(ind - lights[i].i_photon_start) / float(lights[i].c_photon);
+	return vec3(lights[i].pos, alpha);
 }
 
 void main()
@@ -75,13 +67,11 @@ void main()
 	}
 	else
 	{
-		const float pi = 3.141592;
 		int index = ind[i-1073741824];
-		ivec3 indices = photon_indices();
-		pos[index] = debug_light_pos[indices.x];
-		float alpha = 2.0*pi*float(gl_GlobalInvocationID.x-indices.y)/float(indices.z);
+		vec3 ppa = photon_pos_angle();
+		pos[index] = ppa.xy;
 		photon p;
-		p.speed = vec2(cos(alpha), sin(alpha));
+		p.speed = vec2(cos(ppa.z), sin(ppa.z));
 		p.birthTime = totalTime;
 		p.color = vec3(1.0, 0, 0);
 		p.power = totalPower / photonBirthCount;

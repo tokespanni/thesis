@@ -81,6 +81,7 @@ class Main(QGLWidget):
 		
 	#render
 	def paintGL(self):
+		self.frame_count += 1
 		
 		# measure FPS
 		self.fps_frame_count += 1
@@ -96,9 +97,20 @@ class Main(QGLWidget):
 		this_time = pygame.time.get_ticks()/1000.0
 		self.delta_time = (this_time - self.last_time)
 		self.last_time = this_time
-		
 		self.camera.update(self.delta_time)
-		self.frame_count += 1
+	
+		#melyik fenyforras hany fotont indit, kezdo foton index, utolso foton index:
+		self.total_light_power = 0.0
+		c_photon_until_now = 0
+		for i in range(self.lightsource_num):
+			self.total_light_power += self.light_sources[i*8 + 2]
+		for i in range(self.lightsource_num):
+			self.light_sources[i*8 + 3] = self.light_sources[i*8 + 2] / float(self.total_light_power) * self.photon_birth_count
+			self.light_sources[i*8 + 4] = c_photon_until_now
+			c_photon_until_now += self.light_sources[i*8 + 3]
+			self.light_sources[i*8 + 5] = c_photon_until_now - 1
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 8 * self.lightsource_num * sizeof(c_float),self.light_sources)
 		
 		glUseProgram(self.photon_birth_program)
 		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, self.atomic)
@@ -109,13 +121,9 @@ class Main(QGLWidget):
 		glUniform1f(0, pygame.time.get_ticks()/1000.0)
 		glUniform1i(1, self.photon_birth_count)
 		glUniform1i(2, self.lightsource_num)
-		for i in range(self.lightsource_num):
-			self.total_light_power += self.light_sources[i*4 + 2] 
 		glUniform1f(3, self.total_light_power)
-		print "photon_birth_program"
 		glDispatchCompute(self.photon_birth_count,1,1)
 		glFinish()
-		print "Done"
 		glUseProgram(0) 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT)
 		
@@ -127,10 +135,8 @@ class Main(QGLWidget):
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, self.output_pos)
 		glUniform1f(0, self.delta_time)
 		glUniform1f(1, pygame.time.get_ticks()/1000.0)
-		print "photon_simulation_program"
 		glDispatchCompute(self.max_photons, 1, 1)
 		glFinish()
-		print "Done"
 		glUseProgram(0)
 		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)
 		glFinish()
@@ -242,11 +248,11 @@ class Main(QGLWidget):
 		#glEnable(GL_CULL_FACE)
 		
 		self.vao_for_fbo = glGenVertexArrays(1)
-		
-		self.light_sources = np.array([-0.5, -0.5,5,0,0.5,0.5,5,0], dtype = 'f')
+		#								x     y    power photoncount from, to  dummies
+		self.light_sources = np.array([0, 0, 5,    0,          0,    0,  0, 0, 0.5, 0.5, 5, 0, 0, 0, 0, 0], dtype = 'f')
 		self.lightSourceBuffer = glGenBuffers(1)
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
-		glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*4*self.lightsource_num, self.light_sources, GL_STREAM_DRAW)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*8*self.lightsource_num, self.light_sources, GL_STREAM_DRAW)
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 		
 		indices = np.arange(self.max_photons, dtype = 'i')
