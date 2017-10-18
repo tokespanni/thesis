@@ -1,0 +1,35 @@
+#version 430
+
+layout (quads, equal_spacing) in;
+
+in block
+{
+	vec3 pos;
+} In[];
+
+out block
+{
+	vec3	pos;
+	vec3	n;
+	vec2	uv;
+} Out;
+
+layout(location = 0) uniform mat4 world;
+layout(location = 4) uniform mat4 worldIT;
+layout(location = 8) uniform mat4 mvp;
+
+void main()
+{
+	vec2 uv = vec2(2*3.1415f, 3.1415f)*gl_TessCoord.xy;
+	float u = uv.x;
+	float v = uv.y;
+
+	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
+	vec3 pt = In[0].pos + 1*vec3( cu*sv, cv, su*sv );
+	
+	gl_Position = mvp*vec4(pt, 1);
+
+	Out.pos = (world*vec4(pt,1)).xyz;
+	Out.n   = (worldIT*vec4(pt,0)).xyz;
+	Out.uv	= gl_TessCoord.xy;
+}

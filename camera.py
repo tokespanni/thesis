@@ -15,7 +15,7 @@ from euclid import *
 
 class Camera():
 	#public
-	def __init__(self, eye = Vector3(10,10,10), at = Vector3(), up = Vector3(0,1,0)):
+	def __init__(self, eye = Vector3(10,10,10), at = Vector3(0,0,0), up = Vector3(0,1,0)):
 		self.lookAt(eye, at, up)
 		self.viewMatrix  = Matrix4()
 		self.setProjMatrix(45.0, 640/480.0, 0.001, 1000.0)
