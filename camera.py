@@ -14,11 +14,10 @@ sys.path.insert(0, 'C:/Users/Panni/thesis_in_Python/pyeuclid')
 from euclid import *
 
 class Camera():
-	#public
-	def __init__(self, eye = Vector3(10,10,10), at = Vector3(0,0,0), up = Vector3(0,1,0)):
+	def __init__(self, eye = Vector3(20,10,20), at = Vector3(0,0,0), up = Vector3(0,1,0)):
 		self.lookAt(eye, at, up)
 		self.viewMatrix  = Matrix4()
-		self.setProjMatrix(45.0, 640/480.0, 0.001, 1000.0)
+		self.setProjMatrix(50.0, 640/480.0, 0.001, 1000.0)
 		self.setViewMatrix(eye);
 		self.goFw = 0.0
 		self.goRight = 0.0
@@ -26,6 +25,7 @@ class Camera():
 		self.old_y = 0
 		self.dist = 2
 		self.speed = 2.0
+		self.eye = eye
 			
 	def update(self, deltatime):
 		s = Vector3(math.cos(self.v)*math.cos(self.u),
@@ -69,15 +69,15 @@ class Camera():
 			self.goFw = 0
 			
 	def mouseMove(self, e, deltatime):
-		self.u += (e.x() - self.old_x)*deltatime*0.5
-		self.v -= (e.y() - self.old_y)*deltatime*0.5
+		self.u -= (e.x() - self.old_x)*deltatime*0.5
+		self.v += (e.y() - self.old_y)*deltatime*0.5
 		epsilon = 0.001
 		self.v = max(-math.pi/2 + epsilon , min(self.v, math.pi/2-epsilon))
 		self.old_x = e.x()
 		self.old_y = e.y()
 	
 	def mouseWheel(self, delta):
-		self.dist *= 1+0.3*delta
+		self.dist *= 1-0.05*delta
 	
 	def click(self, e):
 		if e.button() == Qt.LeftButton:
@@ -93,7 +93,8 @@ class Camera():
 		s = m * ((eye - at).normalize())
 		self.v = math.asin(s.z)
 		self.u = math.atan2(s.y, s.x)
-		self.at = at		
+		self.at = at
+		self.eye = eye
 		
 	def setProjMatrix(self, angle, aspect, zn, zf):
 		self.projMatrix = Matrix4.new_perspective(angle, aspect, zn, zf)
@@ -102,8 +103,13 @@ class Camera():
 	def setViewMatrix(self, eye):
 		self.viewMatrix = Matrix4.new_look_at(eye, self.at, self.up)
 		self.matViewProj = self.projMatrix * self.viewMatrix
+		self.eye = eye
 
 	def toCenter(self):
 		self.lookAt(Vector3(10,10,10), Vector3(), Vector3(0,1,0))
 		self.setViewMatrix(Vector3(10,10,10))
 		self.dist = 1
+		
+	def getEye(self):
+		return self.eye
+		

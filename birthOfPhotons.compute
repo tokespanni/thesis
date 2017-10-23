@@ -10,7 +10,7 @@ struct photon
 	float birthTime;
 	vec2 speed;
 	float power;
-	float dummy;
+	float birthPower;
 };
 struct light
 {
@@ -33,7 +33,7 @@ restrict layout(std430, binding = 2) buffer emptyIndices
 
 restrict layout(std430, binding = 3) buffer posBuffer
 {
-	vec2 pos[];
+	vec4 pos[];
 };
 
 restrict readonly layout(std430, binding = 4) buffer lightSourceBuffer
@@ -50,8 +50,7 @@ vec3 photon_pos_angle()
 {
 	int ind = int(gl_GlobalInvocationID.x); //which photon
 	int i = 0;
-	while(ind < lights[i].i_photon_start || ind > lights[i].i_photon_end) {i++;} //lightSourse index
-	//i--;
+	while(ind < int(lights[i].i_photon_start) || ind > int(lights[i].i_photon_end)) {i++;} 
 	const float pi = 3.141592;
 	float alpha = 2.0 * pi * float(ind - lights[i].i_photon_start) / float(lights[i].c_photon);
 	return vec3(lights[i].pos, alpha);
@@ -69,13 +68,14 @@ void main()
 	{
 		int index = ind[i-1073741824];
 		vec3 ppa = photon_pos_angle();
-		pos[index] = ppa.xy;
+		pos[index].xy = ppa.xy;
+		pos[index].z = totalTime;
 		photon p;
 		p.speed = vec2(cos(ppa.z), sin(ppa.z));
 		p.birthTime = totalTime;
-		p.color = vec3(1.0, 0, 0);
 		p.power = totalPower / photonBirthCount;
-		p.dummy = 0;
+		p.birthPower = p.power;
+		p.color = vec3(1.0, 0, 0);// * p.power;
 		photons[index] = p;
 	}
 }

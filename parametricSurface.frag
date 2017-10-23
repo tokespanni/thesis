@@ -1,7 +1,5 @@
 #version 430
 
-//in vec3 vs_out_col;
-//in vec2 vs_out_tex0;
 out vec4 fs_out_col;
 
 in block
@@ -13,8 +11,8 @@ in block
 
 uniform sampler2D texImage;
 
-uniform vec3 light = vec3(5);
-uniform vec3 eye = vec3(3);
+uniform vec3 light = vec3(-10);
+layout(location = 12) uniform vec3 eye;
 
 void main()
 {
@@ -32,11 +30,11 @@ void main()
 	col*= texture(texImage, In.uv).xyz;
 	
 	//specular
-	if( di > 0)
+	if( di > -1)
 	{
-		vec3 h = normalize(n + toLight);
 		vec3 toEye = normalize(eye - In.pos);
-		col += clamp(pow(dot(toEye, h),100),0,1)*vec3(1,1,1);
+		vec3 h = normalize(toEye + toLight);
+		col += clamp(pow(dot(n, h),100),0,1)*vec3(1,1,1);
 	}
 	
 	fs_out_col.xyz = col;

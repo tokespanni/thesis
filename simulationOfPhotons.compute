@@ -10,7 +10,7 @@ struct photon
 	float birthTime;
 	vec2 speed;
 	float power;
-	float dummy;
+	float birthPower;
 };
 restrict layout(std430, binding = 1) buffer photonBuffer
 {
@@ -24,11 +24,11 @@ restrict layout(std430, binding = 2) buffer emptyIndices
 
 restrict layout(std430, binding = 3) buffer posBuffer1
 {
-	vec2 pos1[];
+	vec4 pos1[];
 };
 restrict layout(std430, binding = 4) buffer posBuffer2
 {
-	vec2 pos2[];
+	vec4 pos2[];
 };
 layout(location = 0) uniform float deltaTime;
 layout(location = 1) uniform float totalTime;
@@ -41,14 +41,17 @@ void main()
 	//move photon
 	pos2[index].x = pos1[index].x + photons[index].speed.x * deltaTime*0.5;
 	pos2[index].y = pos1[index].y + photons[index].speed.y * deltaTime*0.5;
+	pos2[index].z = totalTime - photons[index].birthTime;
 	
 	if (length(pos2[index]) > 0.90)
 	{
 		int i = int(atomicCounterIncrement(counter) - 1073741824);
 		ind[i] = int(index);
-		pos1[index] = vec2(0.75, 0.75);
-		pos2[index] = vec2(0.75, 0.75);
+		pos1[index].xy = vec2(0.75, 0.75);
+		pos2[index].xy = vec2(0.75, 0.75);
 		photons[index].speed = vec2(0, 0);
+		photons[index].power = photons[index].birthPower /float(totalTime - photons[index].birthTime);
+		//photons[index].color *= photons[index].power;
 	}
 	
 }

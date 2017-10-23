@@ -26,6 +26,7 @@ void main()
 
 	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
 	vec3 pt = In[0].pos + 1*vec3( cu*sv, cv, su*sv );
+	//vec3 pt = In[0].pos + 1*vec3( u, u*u + v*v + u*v + u + v, v);
 	
 	gl_Position = mvp*vec4(pt, 1);
 
