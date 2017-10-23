@@ -23,7 +23,6 @@ class Camera():
 		self.goRight = 0.0
 		self.old_x = 0
 		self.old_y = 0
-		self.dist = 2
 		self.speed = 2.0
 		self.eye = eye
 			
@@ -95,6 +94,7 @@ class Camera():
 		self.u = math.atan2(s.y, s.x)
 		self.at = at
 		self.eye = eye
+		self.dist = abs(at-eye);
 		
 	def setProjMatrix(self, angle, aspect, zn, zf):
 		self.projMatrix = Matrix4.new_perspective(angle, aspect, zn, zf)

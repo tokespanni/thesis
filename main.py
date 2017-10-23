@@ -27,11 +27,11 @@ class Main(QGLWidget):
 		self.photon_birth_program = None
 		self.photon_simulation_program = None
 		self.param_program = None
-		self.camera = Camera(Vector3(10,10,10), Vector3(0,0,0), Vector3(0,1,0))
+		self.camera = Camera(Vector3(-7.3,-2.4,-3.6), Vector3(0,0,0), Vector3(0,1,0))
 		self.last_time = 0
 		self.delta_time = 0
 		self.max_photons = 1024*512
-		self.photon_birth_count = 1024
+		self.photon_birth_count = 1024*8
 		self.fbo_created = False
 		self.lightsource_num = 2
 		self.total_light_power = 0.0
@@ -39,6 +39,7 @@ class Main(QGLWidget):
 		self.light_size = 8
 		self.framebuffer = None
 		self.fbo_texture = None
+		self.free_photons = self.max_photons
 		
 	def initializeGL(self):
 		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )		
@@ -48,14 +49,15 @@ class Main(QGLWidget):
 		self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag")
 
 		#glPointSize(5.0)
-		#								x y  power photoncount from, to  dummies
-		self.light_sources = np.array([0, 0, 0.5,    0,          0,    0,  0, 0,   0.5, 0.5, 0.5, 0, 0, 0, 0, 0], dtype = 'f')
+		#								x y  power photoncount from, to  wl dummy
+		self.light_sources = np.array([0, 0, 0.5,    0,          0,    0,  400, 0,   0.5, 0.5, 0.5, 0, 0, 0, 550, 0], dtype = 'f')
 		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num)
 		glEnable(GL_CULL_FACE)
 
 	#render
 	def paintGL(self):
 		self.measure_FPS()
+		#print self.camera.getEye()
 		
 		#update
 		this_time = pygame.time.get_ticks()/1000.0
@@ -68,32 +70,19 @@ class Main(QGLWidget):
 		
 		self.use_photon_birth_program()
 		
-		glFinish()
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT)
 		
 		self.use_photon_simulation_program()
 		
 		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)
-		glFinish()
 		
 		#debug
 		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self.atomic)
 		atomicCountDebug = glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER,0,1*sizeof(c_int))
-		asd = atomicCountDebug[3]*256*256*256+atomicCountDebug[2]*256*256 + atomicCountDebug[1]*256 +atomicCountDebug[0] - 1073741824
-		#print "atomicCountDebug = ", asd
-		
-		#render
-		glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
-		glViewport(0,0,1024,1024)
-		glClearColor(0, 0, 0, 1)
-		glClear(GL_COLOR_BUFFER_BIT)		
+		self.free_photons = atomicCountDebug[3]*256*256*256+atomicCountDebug[2]*256*256 + atomicCountDebug[1]*256 +atomicCountDebug[0] - 1073741824
+		#print "atomicCountDebug = ", asd		
 
 		self.use_texture_program()
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0)
-		glViewport(0,0, self.size().width(), self.size().height())
-		glClearColor(0.2, 0.3, 0.4, 1)
-		glClear(GL_COLOR_BUFFER_BIT)
 		
 		self.use_param_program()
 		
@@ -128,6 +117,17 @@ class Main(QGLWidget):
 		glUseProgram(0)
 		
 	def use_texture_program(self):
+		glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
+		glViewport(0,0,1024,1024)
+		glClearColor(0, 0, 0, 1)
+		glClear(GL_COLOR_BUFFER_BIT)
+		
+		#glDisable(GL_DEPTH_TEST)
+		#glDepthMask(GL_FALSE)
+		glEnable(GL_BLEND)
+		glBlendEquation(GL_FUNC_ADD)
+		glBlendFunc(GL_ONE, GL_ONE)
+		
 		glUseProgram(self.texture_program)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, self.input_pos)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self.output_pos)
@@ -138,7 +138,16 @@ class Main(QGLWidget):
 		self.input_pos, self.output_pos = self.output_pos, self.input_pos
 		glUseProgram(0)
 		
+		#glEnable(GL_DEPTH_TEST)
+		#glDepthMask(GL_TRUE)
+		glDisable(GL_BLEND)
+		
 	def use_param_program(self):
+		glBindFramebuffer(GL_FRAMEBUFFER, 0)
+		glViewport(0,0, self.size().width(), self.size().height())
+		glClearColor(0.2, 0.3, 0.4, 1)
+		glClear(GL_COLOR_BUFFER_BIT)
+	
 		glUseProgram(self.param_program)
 		matWorld = Matrix4()
 		matWorldIT = matWorld.inverse().transposed()
@@ -161,7 +170,7 @@ class Main(QGLWidget):
 		self.fps_delta_time = abs( time.time() - self.fps_last_time )
 		if self.fps_delta_time >= 1:
 			if self.fps_frame_count:
-				self.setWindowTitle( str(1000.0*float(self.fps_delta_time)/self.fps_frame_count) + " ms, " + str(self.fps_frame_count) + " FPS"  )
+				self.setWindowTitle( str(1000.0*float(self.fps_delta_time)/self.fps_frame_count) + " ms, " + str(self.fps_frame_count) + " FPS" + " free photons = " + str(self.free_photons))
 				self.times.append( self.fps_frame_count )
 			self.fps_frame_count = 0
 			self.fps_last_time = time.time()

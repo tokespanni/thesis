@@ -9,7 +9,7 @@ struct photon
 	vec3 color;
 	float birthTime;
 	vec2 speed;
-	float power;
+	float wavelength;
 	float birthPower;
 };
 struct light
@@ -19,7 +19,8 @@ struct light
 	float c_photon;
 	float i_photon_start;
 	float i_photon_end;
-	vec2 dummy;
+	float wavelength;
+	float dummy;
 };
 restrict layout(std430, binding = 1) buffer photonBuffer
 {
@@ -46,14 +47,14 @@ layout(location = 1) uniform int photonBirthCount;
 layout(location = 2) uniform int lightSourceNum;
 layout(location = 3) uniform float totalPower;
 
-vec3 photon_pos_angle()
+vec4 photon_pos_angle_wavelength()
 {
 	int ind = int(gl_GlobalInvocationID.x); //which photon
 	int i = 0;
 	while(ind < int(lights[i].i_photon_start) || ind > int(lights[i].i_photon_end)) {i++;} 
 	const float pi = 3.141592;
 	float alpha = 2.0 * pi * float(ind - lights[i].i_photon_start) / float(lights[i].c_photon);
-	return vec3(lights[i].pos, alpha);
+	return vec4(lights[i].pos, alpha, lights[i].wavelength);
 }
 
 void main()
@@ -67,17 +68,15 @@ void main()
 	else
 	{
 		int index = ind[i-1073741824];
-		vec3 ppa = photon_pos_angle();
-		pos[index].xy = ppa.xy;
+		vec4 paw = photon_pos_angle_wavelength();
+		pos[index].xy = paw.xy;
 		pos[index].z = totalTime;
 		photon p;
-		p.speed = vec2(cos(ppa.z), sin(ppa.z));
+		p.speed = vec2(cos(paw.z), sin(paw.z));
 		p.birthTime = totalTime;
-		p.power = totalPower / photonBirthCount;
-		p.birthPower = p.power;
-		p.color = vec3(1.0, 0, 0);// * p.power;
+		p.birthPower = totalPower / photonBirthCount;
+		p.wavelength = paw.w;
+		p.color = vec3(1.0, 0, 0);
 		photons[index] = p;
 	}
 }
-
-//color computing

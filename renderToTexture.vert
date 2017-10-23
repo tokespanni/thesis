@@ -5,7 +5,7 @@ struct photon
 	vec3 color;
 	float birthTime;
 	vec2 speed;
-	float power;
+	float wavelength;
 	float birthPower;
 };
 restrict readonly layout(std430, binding = 1) buffer posBuffer1
@@ -25,6 +25,7 @@ layout(location = 0) in vec2 dir;
 out vec3 col;
 out float time;
 out float power;
+out float wavelength;
 
 void main()
 {
@@ -33,14 +34,16 @@ void main()
 		gl_Position = vec4(pos1[gl_VertexID/2].xy, 0, 1);
 		col = photons[gl_VertexID/2].color;
 		time = pos1[gl_VertexID/2].z;
-		power = photons[gl_VertexID/2].power;
+		power = photons[gl_VertexID/2].birthPower;
+		wavelength = photons[gl_VertexID/2].wavelength;
 	}
 	else
 	{
 		gl_Position = vec4(pos2[(gl_VertexID - 1)/2].xy, 0, 1);
 		col = photons[(gl_VertexID - 1)/2].color;
 		time = pos1[(gl_VertexID - 1)/2].z;
-		power = photons[(gl_VertexID - 1)/2].power;
+		power = photons[(gl_VertexID - 1)/2].birthPower;
+		wavelength = photons[(gl_VertexID - 1)/2].wavelength;
 
 	}
 } 
