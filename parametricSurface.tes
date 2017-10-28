@@ -20,13 +20,30 @@ layout(location = 8) uniform mat4 mvp;
 
 void main()
 {
-	vec2 uv = vec2(2*3.1415f, 3.1415f)*gl_TessCoord.xy;
+	//sphere
+	/*vec2 uv = vec2(2*3.1415f, 3.1415f)*gl_TessCoord.xy;
 	float u = uv.x;
 	float v = uv.y;
 
 	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
-	vec3 pt = In[0].pos + 1*vec3( cu*sv, cv, su*sv );
-	//vec3 pt = In[0].pos + 1*vec3( u, u*u + v*v + u*v + u + v, v);
+	vec3 pt = In[0].pos + 1*vec3( cu*sv, cv, su*sv );*/
+	
+	//paraboloid
+	vec2 uv = vec2(1, 2*3.1415f)*gl_TessCoord.xy;
+	float u = uv.x;
+	float v = uv.y;
+
+	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
+	float a = 2, h = 5;
+	vec3 pt = In[0].pos + vec3( a*sqrt(u/h)*cv, u, a*sqrt(u/h)*sv );
+	
+	/*vec2 uv = vec2(2*3.1415f)*gl_TessCoord.xy;
+	float u = uv.x;
+	float v = uv.y;
+
+	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
+	float a = 5, c = 10;
+	vec3 pt = In[0].pos + vec3( (c+a*cv)*cu, (c+a*cv)*su, a*sv );*/
 	
 	gl_Position = mvp*vec4(pt, 1);
 

@@ -32,6 +32,8 @@ restrict layout(std430, binding = 4) buffer posBuffer2
 };
 layout(location = 0) uniform float deltaTime;
 layout(location = 1) uniform float totalTime;
+layout(location = 2) uniform int texW;
+layout(location = 3) uniform int texH;
 
 void main()
 {	
@@ -39,8 +41,27 @@ void main()
 	if(photons[index].speed == vec2(0)) return;
 	
 	//move photon
-	pos2[index].x = pos1[index].x + photons[index].speed.x * deltaTime*0.5;
-	pos2[index].y = pos1[index].y + photons[index].speed.y * deltaTime*0.5;
+	pos2[index].x = pos1[index].x + photons[index].speed.x * deltaTime;
+	pos2[index].y = pos1[index].y + photons[index].speed.y * deltaTime;
+	
+	vec2 coordInTex1 = vec2((pos1[index].x + 1.0) *texW / 2.0, (pos1[index].y + 1.0) *texH / 2.0);
+	vec2 coordInTex2 = vec2((pos2[index].x + 1.0) *texW / 2.0, (pos2[index].y + 1.0) *texH / 2.0);
+	
+	if (int(coordInTex1.x) == int(coordInTex2.x) && int(coordInTex1.y) == int(coordInTex2.y)) //photon is staying on the same texel
+	{
+		vec2 dir = normalize(coordInTex2 - coordInTex1);
+		coordInTex2 += dir;
+		pos2[index].x = coordInTex2.x * 2.0 / float(texW) - 1.0;
+		pos2[index].y = coordInTex2.y * 2.0 / float(texH) - 1.0;
+	}
+	if (abs(int(coordInTex1.x) - int(coordInTex2.x)) > 1 ||abs(int(coordInTex1.y) - int(coordInTex2.y)) > 1) // photon is moving too fast
+	{
+		vec2 dir = normalize(coordInTex2 - coordInTex1);
+		coordInTex2 -= dir;
+		pos2[index].x = coordInTex2.x * 2.0 / float(texW) - 1.0;
+		pos2[index].y = coordInTex2.y * 2.0 / float(texH) - 1.0;
+	}
+
 	pos2[index].z = totalTime - photons[index].birthTime;
 	
 	if (length(pos2[index].xy) > 0.90)

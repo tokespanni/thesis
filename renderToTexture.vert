@@ -22,28 +22,25 @@ restrict layout(std430, binding = 3) buffer photonBuffer
 };
 
 layout(location = 0) in vec2 dir;
-out vec3 col;
 out float time;
 out float power;
 out float wavelength;
 
 void main()
 {
+	int id;
 	if (gl_VertexID % 2 == 0)
 	{
-		gl_Position = vec4(pos1[gl_VertexID/2].xy, 0, 1);
-		col = photons[gl_VertexID/2].color;
-		time = pos1[gl_VertexID/2].z;
-		power = photons[gl_VertexID/2].birthPower;
-		wavelength = photons[gl_VertexID/2].wavelength;
+		id = gl_VertexID/2;
+		gl_Position = vec4(pos1[id].xy, 0, 1);
+		time = pos1[id].z;
 	}
 	else
 	{
-		gl_Position = vec4(pos2[(gl_VertexID - 1)/2].xy, 0, 1);
-		col = photons[(gl_VertexID - 1)/2].color;
-		time = pos1[(gl_VertexID - 1)/2].z;
-		power = photons[(gl_VertexID - 1)/2].birthPower;
-		wavelength = photons[(gl_VertexID - 1)/2].wavelength;
-
+		id = (gl_VertexID - 1)/2;
+		gl_Position = vec4(pos2[id].xy, 0, 1);
+		time = pos2[id].z;
 	}
+	power = photons[id].birthPower;
+	wavelength = photons[id].wavelength;
 } 

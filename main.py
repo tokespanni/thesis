@@ -30,12 +30,13 @@ class Main(QGLWidget):
 		self.camera = Camera(Vector3(-7.3,-2.4,-3.6), Vector3(0,0,0), Vector3(0,1,0))
 		self.last_time = 0
 		self.delta_time = 0
-		self.max_photons = 1024*512
-		self.photon_birth_count = 1024*8
+		self.max_photons = 1024*1024
+		self.photon_birth_count = 1024*2
 		self.fbo_created = False
 		self.lightsource_num = 2
 		self.total_light_power = 0.0
 		self.light_sources_modified = True
+		self.texw, self.texh = 1024*2,1024*2;
 		self.light_size = 8
 		self.framebuffer = None
 		self.fbo_texture = None
@@ -52,6 +53,7 @@ class Main(QGLWidget):
 		#								x y  power photoncount from, to  wl dummy
 		self.light_sources = np.array([0, 0, 0.5,    0,          0,    0,  400, 0,   0.5, 0.5, 0.5, 0, 0, 0, 550, 0], dtype = 'f')
 		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num)
+		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture, self.texw, self.texh)
 		glEnable(GL_CULL_FACE)
 
 	#render
@@ -68,6 +70,7 @@ class Main(QGLWidget):
 		if self.light_sources_modified:
 			self.modify_light_buffers()
 		
+		
 		self.use_photon_birth_program()
 		
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT)
@@ -81,8 +84,11 @@ class Main(QGLWidget):
 		atomicCountDebug = glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER,0,1*sizeof(c_int))
 		self.free_photons = atomicCountDebug[3]*256*256*256+atomicCountDebug[2]*256*256 + atomicCountDebug[1]*256 +atomicCountDebug[0] - 1073741824
 		#print "atomicCountDebug = ", asd		
-
+		
+		
 		self.use_texture_program()
+		
+		#glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
 		
 		self.use_param_program()
 		
@@ -112,13 +118,15 @@ class Main(QGLWidget):
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, self.output_pos)
 		glUniform1f(0, self.delta_time)
 		glUniform1f(1, pygame.time.get_ticks()/1000.0)
+		glUniform1i(2,self.texw)
+		glUniform1i(3,self.texh)
 		glDispatchCompute(self.max_photons, 1, 1)
 		glFinish()
 		glUseProgram(0)
 		
 	def use_texture_program(self):
 		glBindFramebuffer(GL_FRAMEBUFFER, self.framebuffer)
-		glViewport(0,0,1024,1024)
+		glViewport(0,0,self.texw,self.texh)
 		glClearColor(0, 0, 0, 1)
 		glClear(GL_COLOR_BUFFER_BIT)
 		
@@ -198,8 +206,6 @@ class Main(QGLWidget):
 			self.light_sources_modified = False
 			
 	def resizeGL(self, w, h):
-		#glViewport(0, 0, w-1, h-1)
-		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture)
 		print w, h
 		print self.size().width(), self.size().height()
 		self.camera.setProjMatrix(50.0, w/float(h), 0.001, 100.0)

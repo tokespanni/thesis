@@ -59,7 +59,7 @@ def genBuffers(light_sources, max_photons, light_size, lightsource_num):
 	
 	return vaos, vbos, lightSourceBuffer, emptyIndices, input_pos, output_pos, photonBuffer, atomic
 	
-def genFBO(fbo_created, framebuffer, fbo_texture):
+def genFBO(fbo_created, framebuffer, fbo_texture, texw, texh):
 	# if this is called from resize: clean up the previous resources
 	if fbo_created == True:
 		glDeleteFramebuffers(1, [framebuffer])
@@ -74,7 +74,7 @@ def genFBO(fbo_created, framebuffer, fbo_texture):
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1024, 1024, 0, GL_RGBA, GL_FLOAT, None)
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, texw, texh, 0, GL_RGB, GL_FLOAT, None)
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_texture, 0)
 	# check FBO completeness - should raise big fat red flag if this fails
 	fbo_status = glCheckFramebufferStatus(GL_FRAMEBUFFER)
@@ -84,55 +84,3 @@ def genFBO(fbo_created, framebuffer, fbo_texture):
 	glBindFramebuffer(GL_FRAMEBUFFER, 0)
 	fbo_created = True
 	return fbo_created, framebuffer, fbo_texture
-	
-	#http://www.efg2.com/Lab/ScienceAndEngineering/Spectra.htm
-	'''def waveLengthToRGB(wavelength):
-		#390 to 750
-		self.wavelength = 700
-		gamma = 0.80
-		maxIntensity = 255
-		
-		red, green, blue, factor = 0.0,0.0,0.0,0.0
-		if wavelength >= 380 and wavelength < 440:
-			red = -(wavelength - 440.0) / (440.0 - 380.0)
-			green = 0.0
-			blue =  1.0
-		elif wavelength >= 440 and wavelength < 490:
-			red = 0.0
-			green = (wavelength - 440.0) / (490.0 - 440.0)
-			blue = 1.0
-		elif wavelength >= 490 and wavelength < 510:
-			red = 0.0
-			green = 1.0
-			blue = -(wavelength - 510.0) / (510.0 - 490.0)
-		elif wavelength >= 510 and wavelength < 580:
-			red = (wavelength - 510.0) / (580.0 - 510.0)
-			green = 1.0
-			blue = 0.0
-		elif wavelength >= 580 and wavelength < 645:
-			red = 1.0
-			green = -(wavelength - 645) / (645.0 - 580.0)
-			blue = 0.0
-		elif wavelength >= 645 and wavelength < 781:
-			red = 1.0
-			green = 0.0
-			blue = 0.0
-		else:
-			red = 0.0
-			green = 0.0
-			blue = 0.0
-		
-		if wavelength >= 380 and wavelength < 420:
-			factor = 0.3 + 0.7*(wavelength - 380.0) / (420.0 - 380.0)
-		elif wavelength >= 420 and wavelength < 701:
-			factor = 1.0
-		elif wavelength > 701 and wavelength < 781:
-			factor = 0.3 + 0.7*(780.0 - wavelength) / (780.0 - 700.0)
-		else:
-			factor = 0.0
-		
-		r = 0 if red == 0.0 else int(math.floor(maxIntensity * math.pow(red * factor, gamma)))
-		g = 0 if green == 0.0 else int(math.floor(maxIntensity * math.pow(green * factor, gamma)))
-		b = 0 if blue == 0.0 else int(math.floor(maxIntensity * math.pow(blue * factor, gamma)))
-		
-		return r, g, b'''

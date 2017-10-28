@@ -72,7 +72,7 @@ void main()
 		pos[index].xy = paw.xy;
 		pos[index].z = totalTime;
 		photon p;
-		p.speed = vec2(cos(paw.z), sin(paw.z));
+		p.speed = vec2(cos(paw.z), sin(paw.z)) * 0.1;
 		p.birthTime = totalTime;
 		p.birthPower = totalPower / photonBirthCount;
 		p.wavelength = paw.w;

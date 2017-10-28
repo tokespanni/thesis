@@ -1,6 +1,5 @@
 #version 430
 
-in vec3 col;
 in float time;
 in float power;
 in float wavelength;
@@ -97,7 +96,7 @@ vec3 wavelengthToRGB(float wavelength)
 
 void main()
 {
-	color = vec4(wavelengthToRGB(wavelength), 1) * power * 1000;
+	color = vec4(wavelengthToRGB(wavelength), 1) / time * power * 1000;
 }
 
 
