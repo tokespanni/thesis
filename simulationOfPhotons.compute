@@ -35,44 +35,273 @@ layout(location = 1) uniform float totalTime;
 layout(location = 2) uniform int texW;
 layout(location = 3) uniform int texH;
 
+vec3 f(vec2 uv) //paraboloid
+{
+	float u = uv.x;
+	float v = uv.y;
+	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
+	float a = 2, h = 5;
+	return vec3( a*sqrt(u/h)*cv, u, a*sqrt(u/h)*sv ); 
+}
+
+
+/*vec3 f(vec2 uv) //plane
+{
+	return vec3( 0, uv.x, uv.y); 
+}*/
+
+vec3 dfu(vec2 point)
+{
+	vec2 h = vec2(0.0001, 0);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (f(p[0]) - 8*f(p[1]) + 8*f(p[2]) - f(p[3]))/(12*h.x); //du
+}
+
+vec3 dfv(vec2 point)
+{
+	vec2 h = vec2(0, 0.0001);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (f(p[0]) - 8*f(p[1]) + 8*f(p[2]) - f(p[3]))/(12*h.y); //dv
+}
+
+vec3 dfuu(vec2 point)
+{
+	vec2 h = vec2(0.0001, 0);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (dfu(p[0]) - 8*dfu(p[1]) + 8*dfu(p[2]) - dfu(p[3]))/(12*h.x);
+}
+
+vec3 dfvv(vec2 point)
+{
+	vec2 h = vec2(0, 0.0001);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (dfv(p[0]) - 8*dfv(p[1]) + 8*dfv(p[2]) - dfv(p[3]))/(12*h.y);
+}
+
+vec3 dfuv(vec2 point)
+{
+	vec2 h = vec2(0, 0.0001);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (dfu(p[0]) - 8*dfu(p[1]) + 8*dfu(p[2]) - dfu(p[3]))/(12*h.y);
+}
+
+vec4 F(vec4 Omega)
+{
+	vec2 p = Omega.xy;
+	
+	vec3 duu = dfuu(p);
+	vec3 duv = dfuv(p);
+	vec3 dvv = dfvv(p);
+	mat2x3 df = mat2x3(dfu(p), dfv(p));
+	mat2x3 ddu = mat2x3(duu, duv);
+	mat2x3 ddv = mat2x3(duv, dvv);
+	
+	mat2 Gauss = transpose(df) *df;
+	float E = Gauss[0][0], F = Gauss[0][1], G = Gauss[1][1];
+	
+	
+	mat2 dGaussU = transpose(df) * ddu + transpose(ddu) * df;
+	mat2 dGaussV = transpose(df) * ddv + transpose(ddv) * df;
+	
+	float Eu = dGaussU[0][0];
+	float Ev = dGaussV[0][0];
+	float Fu = dGaussU[0][1];
+	float Fv = dGaussV[0][1];
+	float Gu = dGaussU[1][1];
+	float Gv = dGaussV[1][1];
+	
+	float denom = 2*determinant(Gauss);
+	
+	//Christoffel symbols
+	
+	mat2 K1 = mat2(G*Eu - 2*F*Fu + F*Ev,   G*Ev - F*Gu,
+				  G*Ev - F*Gu,  2*G*Fv - G*Gu + F*Gv)/denom;
+	mat2 K2 = mat2((2*E*Fu - E*Ev + F*Eu,   E*Gu - F*Ev,
+				  E*Gu - F*Ev,  E*Gv - 2*F*Fu + F*Gu)/denom);
+	
+	vec2 v = Omega.zw;
+	vec2 ddOmega = vec2(
+		-K1[0][0]*v.x * v.x - 2*K1[0][1] * v.x * v.y - K1[1][1] * v.y * v.y,  
+		-K2[0][0]*v.x * v.x - 2*K2[0][1] * v.x * v.y - K2[1][1] * v.y * v.y);
+	return vec4(v, ddOmega);
+}
+
+/*vec3 dfu(vec2 point)
+{
+	vec2 h = vec2(0.0001, 0);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (f(p[0]) - 8*f(p[1]) + 8*f(p[2]) - f(p[3]))/(12*h.x); //du
+}
+
+vec3 dfv(vec2 point)
+{
+	vec2 h = vec2(0, 0.0001);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (f(p[0]) - 8*f(p[1]) + 8*f(p[2]) - f(p[3]))/(12*h.y); //dv
+}
+
+vec3 dfuu(vec2 point)
+{
+	vec2 h = vec2(0.0001, 0);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (dfu(p[0]) - 8*dfu(p[1]) + 8*dfu(p[2]) - dfu(p[3]))/(12*h.x);
+}
+
+vec3 dfvv(vec2 point)
+{
+	vec2 h = vec2(0, 0.0001);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (dfv(p[0]) - 8*dfv(p[1]) + 8*dfv(p[2]) - dfv(p[3]))/(12*h.y);
+}
+
+vec3 dfuv(vec2 point)
+{
+	vec2 h = vec2(0, 0.0001);
+	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
+	return (dfu(p[0]) - 8*dfu(p[1]) + 8*dfu(p[2]) - dfu(p[3]))/(12*h.y);
+}
+
+mat2 first_matrix(vec2 point)
+{
+	vec3 du = dfu(point);
+	vec3 dv = dfv(point);
+	mat2x3 m;
+	m[0] = du;	
+	m[1] = dv;
+	return transpose(m) * m;	
+}
+
+// E, F, G
+vec3 EFG(vec2 point)
+{				// E                        F                          G
+	return vec3(first_matrix(point)[0][0], first_matrix(point)[0][1], first_matrix(point)[1][1]);
+}
+
+mat2 dGaussU(vec2 point)
+{
+	mat2x3 df;
+	df[0] = dfu(point);	
+	df[1] = dfv(point);
+	
+	mat2x3 ddfu;
+	ddfu[0] = dfuu(point);
+	ddfu[1] = dfuv(point);
+	
+	return transpose(df) * ddfu + transpose(ddfu) * df;
+}
+
+mat2 dGaussV(vec2 point)
+{
+	mat2x3 df;
+	df[0] = dfu(point);	
+	df[1] = dfv(point);
+	
+	mat2x3 ddfv;
+	ddfv[0] = dfuv(point);
+	ddfv[1] = dfvv(point);
+	
+	return transpose(df) * ddfv + transpose(ddfv) * df;
+}
+// Eu, Ev, Fu, Fv, Gu, Gv
+mat3x2 EFG_diff(vec2 point)
+{
+			      // u                  v
+	return mat3x2(dGaussU(point)[0][0], dGaussV(point)[0][0], //E
+				  dGaussU(point)[0][1], dGaussV(point)[0][1], //F
+				  dGaussU(point)[1][1], dGaussV(point)[1][1]);//G
+}
+
+//Christoffel symbols
+
+mat2x2 Christoffels_1(vec2 p)
+{
+	float E = EFG(p).x, F = EFG(p).y, G = EFG(p).z;
+	float Eu = EFG_diff(p)[0][0], Ev = EFG_diff(p)[0][1];
+	float Fu = EFG_diff(p)[1][0], Fv = EFG_diff(p)[1][1];
+	float Gu = EFG_diff(p)[2][0], Gv = EFG_diff(p)[2][1];
+	float nev = 2*determinant(first_matrix(p));	
+	return mat2x2(G*Eu - 2*F*Fu + F*Ev,   G*Ev - F*Gu,
+				  G*Ev - F*Gu,  2*G*Fv - G*Gu + F*Gv)/nev;
+}
+
+mat2x2 Christoffels_2(vec2 p)
+{
+	float E = EFG(p).x, F = EFG(p).y, G = EFG(p).z;
+	float Eu = EFG_diff(p)[0][0], Ev = EFG_diff(p)[0][1];
+	float Fu = EFG_diff(p)[1][0], Fv = EFG_diff(p)[1][1];
+	float Gu = EFG_diff(p)[2][0], Gv = EFG_diff(p)[2][1];
+	float nev = 2*determinant(first_matrix(p));	
+	return mat2x2(2*E*Fu - E*Ev + F*Eu,   E*Gu - F*Ev,
+				  E*Gu - F*Ev,  E*Gv - 2*F*Fu + F*Gu)/nev;
+}
+
+vec4 F(vec4 Omega)
+{
+	mat3x2 df;		 //...
+	mat3x2 ddfu;	 //...
+	mat3x2 ddfv;	 //...
+	vec3 efg = EFG(Omega.xy);
+	mat3x2 efgdiff = EFG_diff(Omega.xy);
+	vec2 c;
+	return vec4(Omega.zw, c);
+}*/
+
+/*vec4 F_torus(vec4 Omega)
+{
+	float u = Omega.x;
+	float v = Omega.y;
+	float p = Omega.z;
+	float q = Omega.w;
+	float dp = (2*p*q*sin(v))/(4+cos(v));
+	float dq = -p*p*(4+cos(v))*sin(v);
+	return vec4(Omega.zw, dp, dq);
+}*/
+
+vec4 Euler(vec4 posvel, float delta_t)
+{
+	return delta_t*F(posvel) + posvel;
+}
+
+/*vec4 Euler01(float t_k_1, float t_k, vec2 p, vec2 v)
+{
+	vec4 posVel = vec4(0);
+	mat2 K1 = Christoffels_1(p);
+	mat2 K2 = Christoffels_2(p);
+	vec2 dw_k_1 = v;
+	vec2 ddw_k_1 = 
+		vec2(
+		-K1[0][0]*v.x * v.x - 2*K1[0][1] * v.x * v.y - K1[1][1] * v.y * v.y,   	   -K2[0][0]*v.x * v.x - 2*K2[0][1] * v.x * v.y - K2[1][1] * v.y * v.y);
+	vec4 F_t_k_1 = vec4(dw_k_1,ddw_k_1);
+	posVel += vec4(p,v) + (t_k - t_k_1)*F_t_k_1;
+	return posVel;
+}*/
+
+float collision_f(vec2 p)
+{
+	return 0.9 - length(p);
+}
+
 void main()
 {	
 	uint index = gl_GlobalInvocationID.x;
 	if(photons[index].speed == vec2(0)) return;
 	
-	//move photon
-	pos2[index].x = pos1[index].x + photons[index].speed.x * deltaTime;
-	pos2[index].y = pos1[index].y + photons[index].speed.y * deltaTime;
+	vec2 position = pos1[index].xy;
+	vec2 velocity = photons[index].speed;
+	vec4 posVel = Euler(vec4(position,velocity),deltaTime);
 	
-	vec2 coordInTex1 = vec2((pos1[index].x + 1.0) *texW / 2.0, (pos1[index].y + 1.0) *texH / 2.0);
-	vec2 coordInTex2 = vec2((pos2[index].x + 1.0) *texW / 2.0, (pos2[index].y + 1.0) *texH / 2.0);
+	position = posVel.xy;
+	velocity = posVel.zw;
 	
-	if (int(coordInTex1.x) == int(coordInTex2.x) && int(coordInTex1.y) == int(coordInTex2.y)) //photon is staying on the same texel
+	if(collision_f(position) < 0)
 	{
-		vec2 dir = normalize(coordInTex2 - coordInTex1);
-		coordInTex2 += dir;
-		pos2[index].x = coordInTex2.x * 2.0 / float(texW) - 1.0;
-		pos2[index].y = coordInTex2.y * 2.0 / float(texH) - 1.0;
-	}
-	if (abs(int(coordInTex1.x) - int(coordInTex2.x)) > 1 ||abs(int(coordInTex1.y) - int(coordInTex2.y)) > 1) // photon is moving too fast
-	{
-		vec2 dir = normalize(coordInTex2 - coordInTex1);
-		coordInTex2 -= dir;
-		pos2[index].x = coordInTex2.x * 2.0 / float(texW) - 1.0;
-		pos2[index].y = coordInTex2.y * 2.0 / float(texH) - 1.0;
-	}
-
-	pos2[index].z = totalTime - photons[index].birthTime;
-	
-	if (length(pos2[index].xy) > 0.90)
-	{
+		position = vec2(0.75, 0.75);
+		velocity = vec2(0);
 		int i = int(atomicCounterIncrement(counter) - 1073741824);
 		ind[i] = int(index);
-		pos1[index].xy = vec2(0.75, 0.75);
-		pos2[index].xy = vec2(0.75, 0.75);
-		photons[index].speed = vec2(0, 0);
-		photons[index].birthPower = 0; //photons[index].birthPower /float(totalTime - photons[index].birthTime);
-		//photons[index].color *= photons[index].power;
 	}
 	
+	pos2[index] = vec4(position,totalTime,0);
+	photons[index].speed = velocity;
 }
+	

@@ -12,7 +12,7 @@ out block
 	vec3 pos;
 } Out[];
 
-uniform float tess_level = 32;
+uniform float tess_level = 64;
 
 void main()
 {

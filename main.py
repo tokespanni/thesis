@@ -27,16 +27,16 @@ class Main(QGLWidget):
 		self.photon_birth_program = None
 		self.photon_simulation_program = None
 		self.param_program = None
-		self.camera = Camera(Vector3(-7.3,-2.4,-3.6), Vector3(0,0,0), Vector3(0,1,0))
+		self.camera = Camera(Vector3(0,0,25), Vector3(0,0,0), Vector3(0,1,0))
 		self.last_time = 0
 		self.delta_time = 0
 		self.max_photons = 1024*1024
-		self.photon_birth_count = 1024*2
+		self.photon_birth_count = 256
 		self.fbo_created = False
 		self.lightsource_num = 2
 		self.total_light_power = 0.0
 		self.light_sources_modified = True
-		self.texw, self.texh = 1024*2,1024*2;
+		self.texw, self.texh = 1024,1024;
 		self.light_size = 8
 		self.framebuffer = None
 		self.fbo_texture = None
@@ -49,7 +49,6 @@ class Main(QGLWidget):
 		self.param_program				= create_program(vertex_file = "parametricSurface.vert", fragment_file = "parametricSurface.frag", tess_con_file = "parametricSurface.tcs", tess_eval_file = "parametricSurface.tes")
 		self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag")
 
-		#glPointSize(5.0)
 		#								x y  power photoncount from, to  wl dummy
 		self.light_sources = np.array([0, 0, 0.5,    0,          0,    0,  400, 0,   0.5, 0.5, 0.5, 0, 0, 0, 550, 0], dtype = 'f')
 		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num)
@@ -59,7 +58,6 @@ class Main(QGLWidget):
 	#render
 	def paintGL(self):
 		self.measure_FPS()
-		#print self.camera.getEye()
 		
 		#update
 		this_time = pygame.time.get_ticks()/1000.0
@@ -129,9 +127,6 @@ class Main(QGLWidget):
 		glViewport(0,0,self.texw,self.texh)
 		glClearColor(0, 0, 0, 1)
 		glClear(GL_COLOR_BUFFER_BIT)
-		
-		#glDisable(GL_DEPTH_TEST)
-		#glDepthMask(GL_FALSE)
 		glEnable(GL_BLEND)
 		glBlendEquation(GL_FUNC_ADD)
 		glBlendFunc(GL_ONE, GL_ONE)
@@ -146,15 +141,15 @@ class Main(QGLWidget):
 		self.input_pos, self.output_pos = self.output_pos, self.input_pos
 		glUseProgram(0)
 		
-		#glEnable(GL_DEPTH_TEST)
-		#glDepthMask(GL_TRUE)
 		glDisable(GL_BLEND)
 		
 	def use_param_program(self):
 		glBindFramebuffer(GL_FRAMEBUFFER, 0)
+		glEnable(GL_DEPTH_TEST)
+		#glCullFace(GL_FRONT);
 		glViewport(0,0, self.size().width(), self.size().height())
 		glClearColor(0.2, 0.3, 0.4, 1)
-		glClear(GL_COLOR_BUFFER_BIT)
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	
 		glUseProgram(self.param_program)
 		matWorld = Matrix4()
@@ -171,6 +166,7 @@ class Main(QGLWidget):
 		glDrawArrays(GL_PATCHES, 0, 1)
 		glBindVertexArray(0)
 		glBindTexture(GL_TEXTURE_2D, 0)
+		#glCullFace(GL_BACK);
 		glUseProgram(0)
 		
 	def measure_FPS(self):
@@ -208,7 +204,7 @@ class Main(QGLWidget):
 	def resizeGL(self, w, h):
 		print w, h
 		print self.size().width(), self.size().height()
-		self.camera.setProjMatrix(50.0, w/float(h), 0.001, 100.0)
+		self.camera.setProjMatrix(55.0, w/float(h), 0.001, 100.0)
 		
 	def closeEvent(self, event):
 		print "end"

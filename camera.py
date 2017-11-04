@@ -97,7 +97,7 @@ class Camera():
 		self.dist = abs(at-eye);
 		
 	def setProjMatrix(self, angle, aspect, zn, zf):
-		self.projMatrix = Matrix4.new_perspective(angle, aspect, zn, zf)
+		self.projMatrix = Matrix4.new_perspective(math.pi*angle/180.0, aspect, zn, zf)
 		self.matViewProj = self.projMatrix * self.viewMatrix
 	
 	def setViewMatrix(self, eye):
