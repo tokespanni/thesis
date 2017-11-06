@@ -1,0 +1,12 @@
+
+//torus
+
+vec3 f(vec2 uv)
+{
+	float u = uv.x * 2 * 3.1415f;
+	float v = uv.y * 2 * 3.1415f;
+	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
+	float a = 1, c = 4;
+	return vec3( (c+a*cv)*cu, (c+a*cv)*su, a*sv );
+}
+

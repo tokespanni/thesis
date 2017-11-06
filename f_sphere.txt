@@ -1,0 +1,11 @@
+
+//sphere
+
+vec3 ff(vec2 uv)
+{
+	float u = uv.y * 2 * 3.1415926535897932384626433832795;
+	float v = uv.x * 3.1415926535897932384626433832795;
+	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
+	return vec3( cu*sv, su*sv, cv);
+}
+

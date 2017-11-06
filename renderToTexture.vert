@@ -6,7 +6,7 @@ struct photon
 	float birthTime;
 	vec2 speed;
 	float wavelength;
-	float birthPower;
+	float power;
 };
 restrict readonly layout(std430, binding = 1) buffer posBuffer1
 {
@@ -41,6 +41,8 @@ void main()
 		gl_Position = vec4(pos2[id].xy, 0, 1);
 		time = pos2[id].z;
 	}
-	power = photons[id].birthPower;
+	if(photons[id].speed == vec2(0))
+		gl_Position = vec4(-2,-2,0,1);
+	power = photons[id].power;
 	wavelength = photons[id].wavelength;
 } 

@@ -1,0 +1,8 @@
+
+//plane
+
+vec3 ff(vec2 uv)
+{
+	return vec3(uv, 0);
+}
+

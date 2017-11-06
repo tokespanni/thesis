@@ -25,9 +25,9 @@ void main()
 	vec3 col = vec3(0);
 	//ambient
 	if(collision_f(2*In.uv-1) < 0)
-		col += vec3(0.3);
+		col += vec3(In.uv,1);
 	else
-		col+= vec3(0.02,0.03,0.04);
+		col+= vec3(In.uv*0.1,0);
 	
 	//diffuse
 	vec3 n = normalize(In.n);

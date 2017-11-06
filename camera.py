@@ -14,7 +14,7 @@ sys.path.insert(0, 'C:/Users/Panni/thesis_in_Python/pyeuclid')
 from euclid import *
 
 class Camera():
-	def __init__(self, eye = Vector3(20,10,20), at = Vector3(0,0,0), up = Vector3(0,1,0)):
+	def __init__(self, eye = Vector3(0,0,15), at = Vector3(0,0,0), up = Vector3(0,1,0)):
 		self.lookAt(eye, at, up)
 		self.viewMatrix  = Matrix4()
 		self.setProjMatrix(50.0, 640/480.0, 0.001, 1000.0)
@@ -106,9 +106,8 @@ class Camera():
 		self.eye = eye
 
 	def toCenter(self):
-		self.lookAt(Vector3(10,10,10), Vector3(), Vector3(0,1,0))
-		self.setViewMatrix(Vector3(10,10,10))
-		self.dist = 1
+		self.lookAt(Vector3(0,0,15), Vector3(), Vector3(0,1,0))
+		self.setViewMatrix(Vector3(0,0,15))
 		
 	def getEye(self):
 		return self.eye

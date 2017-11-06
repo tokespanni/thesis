@@ -6,11 +6,11 @@ layout(binding = 0) uniform atomic_uint counter;
 
 struct photon
 {
-	vec3 color;
+	vec3 dummy;
 	float birthTime;
 	vec2 speed;
 	float wavelength;
-	float birthPower;
+	float power;
 };
 struct light
 {
@@ -74,9 +74,9 @@ void main()
 		photon p;
 		p.speed = vec2(cos(paw.z), sin(paw.z)) * 0.1;
 		p.birthTime = totalTime;
-		p.birthPower = totalPower / photonBirthCount;
+		p.power = totalPower / photonBirthCount;
 		p.wavelength = paw.w;
-		p.color = vec3(1.0, 0, 0);
+		p.dummy = vec3(0, 0, 0);
 		photons[index] = p;
 	}
 }

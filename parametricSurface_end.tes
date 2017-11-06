@@ -1,0 +1,22 @@
+vec3 f(vec2 uv)
+{
+	return ff(uv.xy);
+}
+
+void main()
+{	
+	float u = gl_TessCoord.x;
+	float v = gl_TessCoord.y;
+	
+	vec3 pt = In[0].pos + f(vec2(u, v));
+	
+	gl_Position = mvp*vec4(pt, 1);
+	float h = 0.01;
+	vec3 du = (f(vec2(u+h,v))-f(vec2(u-h,v))) / (2*h);
+	vec3 dv = (f(vec2(u,v+h))-f(vec2(u,v-h))) / (2*h);
+	vec3 n = normalize(cross(dv,du));
+
+	Out.pos = (world*vec4(pt,1)).xyz;
+	Out.n   = (worldIT*vec4(n,0)).xyz;
+	Out.uv	= vec2(u,v);
+}

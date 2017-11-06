@@ -17,52 +17,36 @@ out block
 layout(location = 0) uniform mat4 world;
 layout(location = 4) uniform mat4 worldIT;
 layout(location = 8) uniform mat4 mvp;
+//cone
 
-vec3 torus(float u, float v)
+vec3 ff(vec2 uv)
 {
-	u *= 2*3.1415f;
-	v *= 2*3.1415f;
-	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
-	float a = 1, c = 4;
-	return vec3( (c+a*cv)*cu, (c+a*cv)*su, a*sv );
+	float u = -uv.x;
+	float v = uv.y * 2 * 3.1415926535897932384626433832795;
+	float cv = cos(v), sv = sin(v);
+	float a = 1;
+	return vec3(a*u*cv, a*u*sv, u);
 }
 
+vec3 f(vec2 uv)
+{
+	return ff(uv.xy);
+}
 
 void main()
-{
-	//sphere
-	/*vec2 uv = vec2(2*3.1415f, 3.1415f)*gl_TessCoord.xy;
-	float u = uv.x;
-	float v = uv.y;
-
-	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
-	vec3 pt = In[0].pos + 1*vec3( cu*sv, cv, su*sv );*/
-	
-	//paraboloid
-	/*vec2 uv = vec2(1, 2*3.1415f)*gl_TessCoord.xy;
-	float u = uv.x;
-	float v = uv.y;
-
-	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
-	float a = 2, h = 5;
-	vec3 pt = In[0].pos + vec3( a*sqrt(u/h)*cv, u, a*sqrt(u/h)*sv );*/
-	
-	//plane
-	//vec3 pt = In[0].pos + vec3( gl_TessCoord.xy - vec2(0.5), 0);
-	
+{	
 	float u = gl_TessCoord.x;
 	float v = gl_TessCoord.y;
 	
-	vec3 pt = In[0].pos + torus(u, v);
+	vec3 pt = In[0].pos + f(vec2(u, v));
 	
 	gl_Position = mvp*vec4(pt, 1);
 	float h = 0.01;
-	vec3 du = (torus(u+h,v)-torus(u-h,v)) / (2*h);
-	vec3 dv = (torus(u,v+h)-torus(u,v-h)) / (2*h);
+	vec3 du = (f(vec2(u+h,v))-f(vec2(u-h,v))) / (2*h);
+	vec3 dv = (f(vec2(u,v+h))-f(vec2(u,v-h))) / (2*h);
 	vec3 n = normalize(cross(dv,du));
-	//vec3 n = vec3(0,0,1);
 
 	Out.pos = (world*vec4(pt,1)).xyz;
 	Out.n   = (worldIT*vec4(n,0)).xyz;
-	Out.uv	= gl_TessCoord.xy;
+	Out.uv	= vec2(u,v);
 }

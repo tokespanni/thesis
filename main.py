@@ -27,11 +27,11 @@ class Main(QGLWidget):
 		self.photon_birth_program = None
 		self.photon_simulation_program = None
 		self.param_program = None
-		self.camera = Camera(Vector3(0,0,25), Vector3(0,0,0), Vector3(0,1,0))
+		self.camera = Camera(Vector3(0,0,15), Vector3(0,0,0), Vector3(0,1,0))
 		self.last_time = 0
 		self.delta_time = 0
 		self.max_photons = 1024*1024
-		self.photon_birth_count = 256
+		self.photon_birth_count = 16
 		self.fbo_created = False
 		self.lightsource_num = 2
 		self.total_light_power = 0.0
@@ -42,6 +42,11 @@ class Main(QGLWidget):
 		self.fbo_texture = None
 		self.free_photons = self.max_photons
 		
+		#set parametric surface somehow
+		to_load = "f_cone.txt"
+		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load, "simulationOfPhotons_end.compute")
+		concat_files_to_shader("parametricSurface_begin.tes", to_load, "parametricSurface_end.tes")
+		
 	def initializeGL(self):
 		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )		
 		self.photon_birth_program		= create_program(compute_file = "birthOfPhotons.compute")
@@ -50,7 +55,7 @@ class Main(QGLWidget):
 		self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag")
 
 		#								x y  power photoncount from, to  wl dummy
-		self.light_sources = np.array([0, 0, 0.5,    0,          0,    0,  400, 0,   0.5, 0.5, 0.5, 0, 0, 0, 550, 0], dtype = 'f')
+		self.light_sources = np.array([-0.5, -0.5, 1,    0,  0,    0,  400, 0,   0.5, 0.5, 0.5, 0, 0, 0, 550, 0], dtype = 'f')
 		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num)
 		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture, self.texw, self.texh)
 		glEnable(GL_CULL_FACE)

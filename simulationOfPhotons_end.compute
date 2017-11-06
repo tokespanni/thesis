@@ -1,50 +1,3 @@
-#version 430
-
-layout(local_size_x = 1, local_size_y = 1) in;
-
-layout(binding = 0) uniform atomic_uint counter;
-
-struct photon
-{
-	vec3 color;
-	float birthTime;
-	vec2 speed;
-	float wavelength;
-	float power;
-};
-restrict layout(std430, binding = 1) buffer photonBuffer
-{
-	photon photons[];
-};
-
-restrict layout(std430, binding = 2) buffer emptyIndices
-{
-	int ind[];
-};
-
-restrict layout(std430, binding = 3) buffer posBuffer1
-{
-	vec4 pos1[];
-};
-restrict layout(std430, binding = 4) buffer posBuffer2
-{
-	vec4 pos2[];
-};
-layout(location = 0) uniform float deltaTime;
-layout(location = 1) uniform float totalTime;
-layout(location = 2) uniform int texW;
-layout(location = 3) uniform int texH;
-//cone
-
-vec3 ff(vec2 uv)
-{
-	float u = -uv.x;
-	float v = uv.y * 2 * 3.1415926535897932384626433832795;
-	float cv = cos(v), sv = sin(v);
-	float a = 1;
-	return vec3(a*u*cv, a*u*sv, u);
-}
-
 vec3 f(vec2 uv)
 {
 	return ff(uv*0.5-0.5);
@@ -116,7 +69,7 @@ vec4 F(vec4 Omega)
 	
 	//Christoffel symbols
 	
-	mat2 K1 = - mat2(G*Eu - 2*F*Fu + F*Ev,   G*Ev - F*Gu,
+	mat2 K1 = mat2(G*Eu - 2*F*Fu + F*Ev,   G*Ev - F*Gu,
 				  G*Ev - F*Gu,  2*G*Fv - G*Gu + F*Gv)/denom;
 	mat2 K2 = mat2((2*E*Fu - E*Ev + F*Eu,   E*Gu - F*Ev,
 				  E*Gu - F*Ev,  E*Gv - 2*F*Fv + F*Gu)/denom);
