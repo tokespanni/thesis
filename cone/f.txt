@@ -3,7 +3,7 @@
 
 vec3 ff(vec2 uv)
 {
-	float u = -uv.x;
+	float u = -uv.x-1;
 	float v = uv.y * 2 * 3.1415926535897932384626433832795;
 	float cv = cos(v), sv = sin(v);
 	float a = 1;

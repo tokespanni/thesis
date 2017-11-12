@@ -1,7 +1,7 @@
 
 //torus
 
-vec3 f(vec2 uv)
+vec3 ff(vec2 uv)
 {
 	float u = uv.x * 2 * 3.1415f;
 	float v = uv.y * 2 * 3.1415f;

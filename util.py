@@ -35,6 +35,7 @@ def genBuffers(light_sources, max_photons, light_size, lightsource_num):
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(c_int)*max_photons, indices, GL_STREAM_DRAW)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 	
+	# pos.x		pos.y		time 		dummy
 	positions = np.zeros(4*max_photons, dtype = 'f')
 	input_pos = glGenBuffers(1)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, input_pos)
@@ -84,3 +85,11 @@ def genFBO(fbo_created, framebuffer, fbo_texture, texw, texh):
 	glBindFramebuffer(GL_FRAMEBUFFER, 0)
 	fbo_created = True
 	return fbo_created, framebuffer, fbo_texture
+	
+def concat_files_to_shader(begin, f, end):
+	filename = begin.split('_')[0]
+	filetype = begin.split('.')[1]
+	with open(filename + '.' + filetype, 'w') as outfile:
+		for fname in [begin, f, end]:
+			with open(fname) as infile:
+				outfile.write(infile.read())

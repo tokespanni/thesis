@@ -1,0 +1,12 @@
+
+//paraboloid
+
+vec3 ff(vec2 uv)
+{
+	float u = uv.x;
+	float v = uv.y * 2 * 3.1415f;
+	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
+	float a = 2, h = 5;
+	return vec3( a*sqrt(u/h)*cv, u, a*sqrt(u/h)*sv );
+}
+

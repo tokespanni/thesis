@@ -14,11 +14,12 @@ import pygame.time
 import pygame
 from shaderProgram import create_program
 from util import *
+from GUI import *
 
 class Main(QGLWidget):
-	def __init__(self, parent = None):
+	def __init__(self, surface = 'plane'):
 		
-		super(Main, self).__init__(parent)
+		super(Main, self).__init__()
 		self.setGeometry( 30,30, 640, 480 )
 		self.fps_last_time = 0
 		self.fps_frame_count = 0		
@@ -31,19 +32,23 @@ class Main(QGLWidget):
 		self.last_time = 0
 		self.delta_time = 0
 		self.max_photons = 1024*1024
-		self.photon_birth_count = 16
+		self.photon_birth_count = 1024*2
 		self.fbo_created = False
-		self.lightsource_num = 2
 		self.total_light_power = 0.0
 		self.light_sources_modified = True
-		self.texw, self.texh = 1024,1024;
-		self.light_size = 8
+		self.texw, self.texh = 1024,1024
 		self.framebuffer = None
 		self.fbo_texture = None
 		self.free_photons = self.max_photons
+		self.min_photon_energy = 0.03
 		
-		#set parametric surface somehow
-		to_load = "f_cone.txt"
+		#								x	y		power	photoncount	from	to	wl		dummy
+		self.light_sources = np.array( [0,	0,		1,		0,			0,		0,	400,	1,   
+										0.5, 0.5,	1, 		0, 			0, 		0, 	550, 	0.2], dtype = 'f')
+		self.lightsource_num = 2
+		self.light_size = len(self.light_sources)/self.lightsource_num
+		
+		to_load = surface + '/f.txt'
 		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load, "simulationOfPhotons_end.compute")
 		concat_files_to_shader("parametricSurface_begin.tes", to_load, "parametricSurface_end.tes")
 		
@@ -54,8 +59,7 @@ class Main(QGLWidget):
 		self.param_program				= create_program(vertex_file = "parametricSurface.vert", fragment_file = "parametricSurface.frag", tess_con_file = "parametricSurface.tcs", tess_eval_file = "parametricSurface.tes")
 		self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag")
 
-		#								x y  power photoncount from, to  wl dummy
-		self.light_sources = np.array([-0.5, -0.5, 1,    0,  0,    0,  400, 0,   0.5, 0.5, 0.5, 0, 0, 0, 550, 0], dtype = 'f')
+
 		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num)
 		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture, self.texw, self.texh)
 		glEnable(GL_CULL_FACE)
@@ -80,14 +84,13 @@ class Main(QGLWidget):
 		
 		self.use_photon_simulation_program()
 		
-		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)
+		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 		
 		#debug
 		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self.atomic)
 		atomicCountDebug = glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER,0,1*sizeof(c_int))
 		self.free_photons = atomicCountDebug[3]*256*256*256+atomicCountDebug[2]*256*256 + atomicCountDebug[1]*256 +atomicCountDebug[0] - 1073741824
-		#print "atomicCountDebug = ", asd		
-		
+		#print "atomicCountDebug = ", asd	
 		
 		self.use_texture_program()
 		
@@ -121,8 +124,7 @@ class Main(QGLWidget):
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, self.output_pos)
 		glUniform1f(0, self.delta_time)
 		glUniform1f(1, pygame.time.get_ticks()/1000.0)
-		glUniform1i(2,self.texw)
-		glUniform1i(3,self.texh)
+		glUniform1f(2,self.min_photon_energy)
 		glDispatchCompute(self.max_photons, 1, 1)
 		glFinish()
 		glUseProgram(0)
@@ -238,9 +240,17 @@ class Main(QGLWidget):
 		
 if __name__ == '__main__':
 	pygame.init()
-	app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
-	widget = Main()
+	#app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
+	'''widget = Main()
 	widget.show()
 	app.exec_()
-	print np.mean( widget.times )
+	print np.mean( widget.times )'''
+	
+	
+	app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
+	
+	screen = Select_Surface()
+	screen.show()
+	app.exec_()
+	#sys.exit(app.exec_())
 	

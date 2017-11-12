@@ -96,7 +96,7 @@ vec3 wavelengthToRGB(float wavelength)
 
 void main()
 {
-	color = vec4(wavelengthToRGB(wavelength), 1) / time * power * 1000;
+	color = vec4(wavelengthToRGB(wavelength), 1) / time * power;
 }
 
 

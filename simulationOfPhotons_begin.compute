@@ -32,5 +32,4 @@ restrict layout(std430, binding = 4) buffer posBuffer2
 };
 layout(location = 0) uniform float deltaTime;
 layout(location = 1) uniform float totalTime;
-layout(location = 2) uniform int texW;
-layout(location = 3) uniform int texH;
+layout(location = 2) uniform float minPhotonEnergy;

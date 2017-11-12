@@ -47,14 +47,22 @@ layout(location = 1) uniform int photonBirthCount;
 layout(location = 2) uniform int lightSourceNum;
 layout(location = 3) uniform float totalPower;
 
-vec4 photon_pos_angle_wavelength()
+photon photon_pos_angle_wavelength()
 {
 	int ind = int(gl_GlobalInvocationID.x); //which photon
 	int i = 0;
 	while(ind < int(lights[i].i_photon_start) || ind > int(lights[i].i_photon_end)) {i++;} 
 	const float pi = 3.141592;
 	float alpha = 2.0 * pi * float(ind - lights[i].i_photon_start) / float(lights[i].c_photon);
-	return vec4(lights[i].pos, alpha, lights[i].wavelength);
+	photon p;
+	p.dummy = vec3(0);
+	p.dummy.xy = lights[i].pos;
+	//p.speed = lights[i].dummy * vec2(cos(alpha), sin(alpha)) * 0.1;
+	p.speed = vec2(cos(alpha), sin(alpha)) * 0.1;
+	p.birthTime = totalTime;
+	p.power = 1;
+	p.wavelength = lights[i].wavelength;
+	return p;
 }
 
 void main()
@@ -68,15 +76,19 @@ void main()
 	else
 	{
 		int index = ind[i-1073741824];
-		vec4 paw = photon_pos_angle_wavelength();
+		/*vec4 paw = photon_pos_angle_wavelength();
+		photon p;
 		pos[index].xy = paw.xy;
 		pos[index].z = totalTime;
-		photon p;
 		p.speed = vec2(cos(paw.z), sin(paw.z)) * 0.1;
 		p.birthTime = totalTime;
 		p.power = totalPower / photonBirthCount;
 		p.wavelength = paw.w;
 		p.dummy = vec3(0, 0, 0);
+		*/
+		photon p = photon_pos_angle_wavelength();
+		pos[index].xy = p.dummy.xy;
+		pos[index].z = p.birthTime;
 		photons[index] = p;
 	}
 }
