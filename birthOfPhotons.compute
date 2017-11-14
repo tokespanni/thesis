@@ -60,7 +60,7 @@ photon photon_pos_angle_wavelength()
 	//p.speed = lights[i].dummy * vec2(cos(alpha), sin(alpha)) * 0.1;
 	p.speed = vec2(cos(alpha), sin(alpha)) * 0.1;
 	p.birthTime = totalTime;
-	p.power = 1;
+	p.power = lights[i].power;
 	p.wavelength = lights[i].wavelength;
 	return p;
 }

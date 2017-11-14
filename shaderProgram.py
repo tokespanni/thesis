@@ -11,8 +11,7 @@ def load_and_compile_shader(shader_type, name):
 	# get debug info
 	message = glGetShaderInfoLog(shader_id)
 	if message:
-		print("[Shader compilation failed]")
-		print(message)
+		raise Exception("[Shader compilation failed] \n" + message + "\n Exiting...")
 	return shader_id
 	
 	

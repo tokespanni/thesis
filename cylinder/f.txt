@@ -1,0 +1,14 @@
+
+//Cylinder
+
+vec3 ff(vec2 uv)
+{
+	float R = radius_2;
+	float h = height;
+	float pi = 3.1415926535897932384626433832795;
+	float u = uv.x;
+	float v = uv.y;
+	return vec3(R*cos(2*pi*u), R*sin(2*pi*u), h*v);
+}
+
+

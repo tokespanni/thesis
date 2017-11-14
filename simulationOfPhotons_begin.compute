@@ -33,3 +33,9 @@ restrict layout(std430, binding = 4) buffer posBuffer2
 layout(location = 0) uniform float deltaTime;
 layout(location = 1) uniform float totalTime;
 layout(location = 2) uniform float minPhotonEnergy;
+layout(location = 3) uniform vec4 Rhrd;
+
+float radius_1 = Rhrd.x;
+float height = Rhrd.y;
+float radius_2 = Rhrd.z;
+float param_4 = Rhrd.w;

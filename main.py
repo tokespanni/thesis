@@ -17,10 +17,10 @@ from util import *
 from GUI import *
 
 class Main(QGLWidget):
-	def __init__(self, surface = 'plane'):
+	def __init__(self, surface = 'sphere'):
 		
 		super(Main, self).__init__()
-		self.setGeometry( 30,30, 640, 480 )
+		self.setGeometry( 0,35, 1000, 960 )
 		self.fps_last_time = 0
 		self.fps_frame_count = 0		
 		self.times = []
@@ -31,20 +31,26 @@ class Main(QGLWidget):
 		self.camera = Camera(Vector3(0,0,15), Vector3(0,0,0), Vector3(0,1,0))
 		self.last_time = 0
 		self.delta_time = 0
-		self.max_photons = 1024*1024
-		self.photon_birth_count = 1024*2
 		self.fbo_created = False
-		self.total_light_power = 0.0
 		self.light_sources_modified = True
 		self.texw, self.texh = 1024,1024
 		self.framebuffer = None
 		self.fbo_texture = None
+		
+		self.time = 0
+		self.in_pause = False
+		
+		self.total_light_power = 0.0
+		self.photon_birth_count = None #16#1024*2
+		self.max_photons = 1024*1024
 		self.free_photons = self.max_photons
 		self.min_photon_energy = 0.03
-		
-		#								x	y		power	photoncount	from	to	wl		dummy
-		self.light_sources = np.array( [0,	0,		1,		0,			0,		0,	400,	1,   
-										0.5, 0.5,	1, 		0, 			0, 		0, 	550, 	0.2], dtype = 'f')
+								   # Radius_1	 height	 radius_2	 param4
+		self.param_surface_params = [5.,		 5., 	1., 		0.]
+										
+		#								x	y		power	photoncount	from		to	wl		dummy
+		self.light_sources = np.array( [0,	0,		1,		8,			0,		0,	400,	0,   
+										0.5, 0.5,	0.5, 	8, 			0, 		0, 	550, 	0], dtype = 'f')
 		self.lightsource_num = 2
 		self.light_size = len(self.light_sources)/self.lightsource_num
 		
@@ -53,39 +59,39 @@ class Main(QGLWidget):
 		concat_files_to_shader("parametricSurface_begin.tes", to_load, "parametricSurface_end.tes")
 		
 	def initializeGL(self):
-		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )		
-		self.photon_birth_program		= create_program(compute_file = "birthOfPhotons.compute")
-		self.photon_simulation_program	= create_program(compute_file = "simulationOfPhotons.compute")
-		self.param_program				= create_program(vertex_file = "parametricSurface.vert", fragment_file = "parametricSurface.frag", tess_con_file = "parametricSurface.tcs", tess_eval_file = "parametricSurface.tes")
-		self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag")
-
+		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )
+		try:
+			self.photon_birth_program		= create_program(compute_file = "birthOfPhotons.compute")
+			self.photon_simulation_program	= create_program(compute_file = "simulationOfPhotons.compute")
+			self.param_program				= create_program(vertex_file = "parametricSurface.vert", fragment_file = "parametricSurface.frag", tess_con_file = "parametricSurface.tcs", tess_eval_file = "parametricSurface.tes")
+			self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag")
+		except Exception as error:
+			print (error)
+			QtCore.QCoreApplication.quit()
+			sys.exit()
 
 		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num)
 		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture, self.texw, self.texh)
 		glEnable(GL_CULL_FACE)
 
-	#render
 	def paintGL(self):
-		self.measure_FPS()
-		
 		#update
-		this_time = pygame.time.get_ticks()/1000.0
-		self.delta_time = (this_time - self.last_time)
-		self.last_time = this_time
+		self.compute_time()
+		self.measure_FPS()
 		self.camera.update(self.delta_time)
-
 		if self.light_sources_modified:
-			self.modify_light_buffers()
-		
-		
-		self.use_photon_birth_program()
-		
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT)
-		
-		self.use_photon_simulation_program()
-		
-		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
-		
+			self.modify_light_buffers()	
+			
+		#render
+		if not self.in_pause:
+			self.use_photon_birth_program()
+			
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT)
+			
+			self.use_photon_simulation_program()
+			
+			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
+			
 		#debug
 		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self.atomic)
 		atomicCountDebug = glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER,0,1*sizeof(c_int))
@@ -107,7 +113,7 @@ class Main(QGLWidget):
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self.emptyIndices)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, self.input_pos)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, self.lightSourceBuffer)
-		glUniform1f(0, pygame.time.get_ticks()/1000.0)
+		glUniform1f(0, self.time)
 		glUniform1i(1, self.photon_birth_count)
 		glUniform1i(2, self.lightsource_num)
 		glUniform1f(3, self.total_light_power)
@@ -123,8 +129,9 @@ class Main(QGLWidget):
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, self.input_pos)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, self.output_pos)
 		glUniform1f(0, self.delta_time)
-		glUniform1f(1, pygame.time.get_ticks()/1000.0)
-		glUniform1f(2,self.min_photon_energy)
+		glUniform1f(1, self.time)
+		glUniform1f(2, self.min_photon_energy)
+		glUniform4fv(3, 1, self.param_surface_params)
 		glDispatchCompute(self.max_photons, 1, 1)
 		glFinish()
 		glUseProgram(0)
@@ -153,7 +160,6 @@ class Main(QGLWidget):
 	def use_param_program(self):
 		glBindFramebuffer(GL_FRAMEBUFFER, 0)
 		glEnable(GL_DEPTH_TEST)
-		#glCullFace(GL_FRONT);
 		glViewport(0,0, self.size().width(), self.size().height())
 		glClearColor(0.2, 0.3, 0.4, 1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -166,6 +172,7 @@ class Main(QGLWidget):
 		glUniformMatrix4fv(4, 1, GL_FALSE, c_matrix(matWorldIT))
 		glUniformMatrix4fv(8, 1, GL_FALSE, c_matrix(mvp))
 		glUniform3fv(12, 1, [self.camera.getEye().x,self.camera.getEye().y, self.camera.getEye().z])
+		glUniform4fv(16, 1, self.param_surface_params)
 		glActiveTexture(GL_TEXTURE0)
 		glBindTexture(GL_TEXTURE_2D, self.fbo_texture)
 		glBindVertexArray(self.vaos)
@@ -173,7 +180,6 @@ class Main(QGLWidget):
 		glDrawArrays(GL_PATCHES, 0, 1)
 		glBindVertexArray(0)
 		glBindTexture(GL_TEXTURE_2D, 0)
-		#glCullFace(GL_BACK);
 		glUseProgram(0)
 		
 	def measure_FPS(self):
@@ -187,26 +193,18 @@ class Main(QGLWidget):
 			self.fps_last_time = time.time()
 				
 	def modify_light_buffers(self):
-			#melyik fenyforras hany fotont indit, kezdo foton index, utolso foton index:
-			self.total_light_power = 0.0
-			c_photon_until_now = 0
-			for i in range(self.lightsource_num):
-				self.total_light_power += self.light_sources[i*self.light_size + 2]
-			for i in range(self.lightsource_num):
-				#					photoncount
-				self.light_sources[i*self.light_size + 3] = floor(self.light_sources[i*self.light_size + 2] / float(self.total_light_power) * self.photon_birth_count)
-				self.light_sources[i*self.light_size + 4] = c_photon_until_now
-				c_photon_until_now += self.light_sources[i*self.light_size + 3]
-				self.light_sources[i*self.light_size + 5] = c_photon_until_now - 1
-				if i == self.lightsource_num - 1: #for the very last photon
-					self.light_sources[i*self.light_size + 5] = self.photon_birth_count - 1
-				print 'photoncount', self.light_sources[i*self.light_size + 3]
-				print 'start photon', self.light_sources[i*self.light_size + 4]
-				print 'end photon', self.light_sources[i*self.light_size + 5]
-				
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
-			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, self.light_size * self.lightsource_num * sizeof(c_float),self.light_sources)
-			self.light_sources_modified = False
+		c_photon_until_now = 0
+		s = 8 #number of one lightsource's parameters
+		for i in range(self.lightsource_num):
+			self.light_sources[i*s+4] = c_photon_until_now
+			c_photon_until_now += self.light_sources[i*s+3]
+			self.light_sources[i*s+5] = c_photon_until_now - 1
+			
+		self.photon_birth_count = int(c_photon_until_now)	
+		
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, self.light_size * self.lightsource_num * sizeof(c_float),self.light_sources)
+		self.light_sources_modified = False
 			
 	def resizeGL(self, w, h):
 		print w, h
@@ -225,6 +223,8 @@ class Main(QGLWidget):
 			self.wavelength = min(self.wavelength + 1, 750)
 		if e.key() == Qt.Key_Minus:
 			self.wavelength = max(self.wavelength - 1, 390)
+		if e.key() == Qt.Key_Space:
+			self.in_pause = not self.in_pause
 
 	def mousePressEvent(self, e):
 		self.camera.click(e)
@@ -237,20 +237,24 @@ class Main(QGLWidget):
 	
 	def wheelEvent(self,e):
 		self.camera.mouseWheel(e.angleDelta().y()/120)
+	
+	def compute_time(self):
+		this_time = pygame.time.get_ticks()/1000.0
+		self.delta_time = (this_time - self.last_time)
+		self.last_time = this_time		
+		if not self.in_pause:
+			self.time += self.delta_time
 		
 if __name__ == '__main__':
 	pygame.init()
-	#app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
-	'''widget = Main()
+	app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
+	widget = Main()
 	widget.show()
 	app.exec_()
-	print np.mean( widget.times )'''
+	print np.mean( widget.times )
 	
 	
-	app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
-	
+	'''app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
 	screen = Select_Surface()
 	screen.show()
-	app.exec_()
-	#sys.exit(app.exec_())
-	
+	app.exec_()'''

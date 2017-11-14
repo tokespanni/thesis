@@ -17,3 +17,9 @@ out block
 layout(location = 0) uniform mat4 world;
 layout(location = 4) uniform mat4 worldIT;
 layout(location = 8) uniform mat4 mvp;
+layout(location = 16) uniform vec4 Rhrd;
+
+float radius_1 = Rhrd.x;
+float height = Rhrd.y;
+float radius_2 = Rhrd.z;
+float param_4 = Rhrd.w;

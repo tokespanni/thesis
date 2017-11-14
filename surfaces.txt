@@ -2,4 +2,7 @@ Torus
 Sphere
 Plane
 Paraboloid
+Cone
+Cylinder
+Proxy_circle
 New

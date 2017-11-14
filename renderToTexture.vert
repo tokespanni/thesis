@@ -26,6 +26,13 @@ out float time;
 out float power;
 out float wavelength;
 
+vec2 pos_trafo(vec2 position)
+{
+	float u = position.x;
+	float v = position.y;
+	return vec2(u,v);
+}
+
 void main()
 {
 	int id;
@@ -41,6 +48,7 @@ void main()
 		gl_Position = vec4(pos2[id].xy, 0, 1);
 		time = pos2[id].z;
 	}
+	gl_Position = vec4(pos_trafo(gl_Position.xy), gl_Position.zw);
 	if(photons[id].speed == vec2(0))
 		gl_Position = vec4(-2,-2,0,1);
 	power = photons[id].power;

@@ -1,6 +1,5 @@
 #line 2 "simulationOfPhotons_end"
 
-
 const float EPS = 0.0005;
 #define DiffMethod2(fn,pt,h) (fn(pt+2*h) - fn(pt-2*h))/(2*EPS)								//second order method
 #define DiffMethod4(fn,pt,h) (fn(pt-2*h) - 8*fn(pt-h) + 8*fn(pt+h) - fn(pt+2*h))/(12*EPS)	//forth order method
@@ -10,9 +9,9 @@ const float EPS = 0.0005;
 #define DiffV4(fn,pt)		DiffMethod4(fn,pt, vec2(0,EPS))
 
 vec3 f(vec2 uv){	return ff(uv*0.5-0.5);}
+//vec3 f(vec2 uv){	return ff(uv);}
 vec3 dfu(vec2 uv){	return DiffU2(f,uv);}
 vec3 dfv(vec2 uv){	return DiffV2(f,uv);}
-
 
 vec4 F(vec4 Omega)
 {
@@ -96,7 +95,7 @@ void main()
 		int i = int(atomicCounterIncrement(counter) - 1073741824);
 		ind[i] = int(index);
 	}
-	
+
 	pos2[index] = vec4(position,time,0);
 	photons[index].speed = velocity;
 }
