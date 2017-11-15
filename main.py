@@ -49,8 +49,8 @@ class Main(QGLWidget):
 		self.param_surface_params = [5.,		 5., 	1., 		0.]
 										
 		#								x	y		power	photoncount	from		to	wl		dummy
-		self.light_sources = np.array( [0,	0,		1,		8,			0,		0,	400,	0,   
-										0.5, 0.5,	0.5, 	8, 			0, 		0, 	550, 	0], dtype = 'f')
+		self.light_sources = np.array( [0.25,	0.25,		1,		256,			0,		0,	400,	0,   
+										0.75, 	0.5,		0.5, 	256, 			0, 		0, 	550, 	0], dtype = 'f')
 		self.lightsource_num = 2
 		self.light_size = len(self.light_sources)/self.lightsource_num
 		
@@ -64,7 +64,7 @@ class Main(QGLWidget):
 			self.photon_birth_program		= create_program(compute_file = "birthOfPhotons.compute")
 			self.photon_simulation_program	= create_program(compute_file = "simulationOfPhotons.compute")
 			self.param_program				= create_program(vertex_file = "parametricSurface.vert", fragment_file = "parametricSurface.frag", tess_con_file = "parametricSurface.tcs", tess_eval_file = "parametricSurface.tes")
-			self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag")
+			self.texture_program			= create_program(vertex_file = "geom/renderToTexture.vert", fragment_file = "geom/renderToTexture.frag", geom_file = "geom/renderToTexture.geom")
 		except Exception as error:
 			print (error)
 			QtCore.QCoreApplication.quit()
@@ -150,7 +150,7 @@ class Main(QGLWidget):
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self.output_pos)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, self.photonBuffer)
 		glBindVertexArray(0)
-		glDrawArrays(GL_LINES, 0, self.max_photons*2)
+		glDrawArrays(GL_POINTS, 0, self.max_photons)
 		glBindVertexArray(0)
 		self.input_pos, self.output_pos = self.output_pos, self.input_pos
 		glUseProgram(0)

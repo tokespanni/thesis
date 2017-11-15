@@ -40,6 +40,7 @@ void main()
 	
 	//texture
 	col += 1.5*texture(texImage, In.uv).xyz;
+	//col += vec3(1,1,1);
 	
 	//specular
 	if( di > -1)

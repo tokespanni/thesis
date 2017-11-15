@@ -8,7 +8,7 @@ const float EPS = 0.0005;
 #define DiffU4(fn,pt)		DiffMethod4(fn,pt, vec2(EPS,0))
 #define DiffV4(fn,pt)		DiffMethod4(fn,pt, vec2(0,EPS))
 
-vec3 f(vec2 uv){	return ff(uv*0.5-0.5);}
+vec3 f(vec2 uv){	return ff(uv);}
 //vec3 f(vec2 uv){	return ff(uv);}
 vec3 dfu(vec2 uv){	return DiffU2(f,uv);}
 vec3 dfv(vec2 uv){	return DiffV2(f,uv);}

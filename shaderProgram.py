@@ -15,7 +15,7 @@ def load_and_compile_shader(shader_type, name):
 	return shader_id
 	
 	
-def create_program(vertex_file = None, fragment_file = None, tess_con_file = None, tess_eval_file = None, compute_file = None):
+def create_program(vertex_file = None, fragment_file = None, tess_con_file = None, tess_eval_file = None, compute_file = None, geom_file = None):
 	'''
 	Possible function calls:
 	1. vertex_file, fragment_file, tess_con_file and tess_eval_file are not None
@@ -33,9 +33,14 @@ def create_program(vertex_file = None, fragment_file = None, tess_con_file = Non
 			tess_con_id = load_and_compile_shader(GL_TESS_CONTROL_SHADER, tess_con_file)
 			glAttachShader(program, tess_eval_id)
 			glAttachShader(program, tess_con_id)
+		if geom_file is not None:
+			geom_shader_id = load_and_compile_shader(GL_GEOMETRY_SHADER, geom_file)
+			glAttachShader(program, geom_shader_id)
 		# free up the now-unnecessary shader binaries
 		glDeleteShader(vertex_shader_id)
 		glDeleteShader(fragment_shader_id)
+		if geom_file is not None:
+			glDeleteShader(geom_shader_id)
 		if tess_eval_file is not None and tess_con_file is not None:
 			glDeleteShader(tess_eval_id)
 			glDeleteShader(tess_con_id)

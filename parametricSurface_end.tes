@@ -1,6 +1,28 @@
+
+#line 2 "paramtericSurface_end.tes"
+
 vec3 f(vec2 uv)
 {
 	return ff(uv.xy);
+}
+
+vec3 computeNormal(vec2 uv)
+{
+	float h = 0.01;
+	vec3 du, dv, du1, dv1;
+	
+	du = f(uv + vec2(h, h)) - f(uv + vec2(-h, h));
+	du1 = f(uv + vec2(h, 0)) - f(uv + vec2(-h, 0));
+	if(dot(du1,du1) > dot(du,du)) dv = du1;
+	du1 = f(uv + vec2(h,-h)) - f(uv + vec2(-h,-h));
+	if(dot(du1,du1) > dot(du,du)) dv = du1;
+	
+	dv = f(uv + vec2( h,h)) - f(uv + vec2( h,-h));
+	dv1 = f(uv + vec2( 0,h)) - f(uv + vec2( 0,-h));
+	if(dot(dv1,dv1) > dot(dv,dv)) dv = dv1;
+	dv1 = f(uv + vec2(-h,h)) - f(uv + vec2(-h,-h));
+	if(dot(dv1,dv1) > dot(dv,dv)) dv = dv1;
+	return normalize(cross(dv, du));
 }
 
 void main()
@@ -9,12 +31,9 @@ void main()
 	float v = gl_TessCoord.y;
 	
 	vec3 pt = In[0].pos + f(vec2(u, v));
+	vec3 n = computeNormal(vec2(u,v));
 	
 	gl_Position = mvp*vec4(pt, 1);
-	float h = 0.01;
-	vec3 du = (f(vec2(u+h,v))-f(vec2(u-h,v))) / (2*h);
-	vec3 dv = (f(vec2(u,v+h))-f(vec2(u,v-h))) / (2*h);
-	vec3 n = normalize(cross(dv,du));
 
 	Out.pos = (world*vec4(pt,1)).xyz;
 	Out.n   = (worldIT*vec4(n,0)).xyz;
