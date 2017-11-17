@@ -14,13 +14,13 @@ import pygame.time
 import pygame
 from shaderProgram import create_program
 from util import *
-from GUI import *
+from win32api import GetSystemMetrics
 
 class Main(QGLWidget):
 	def __init__(self, surface = 'sphere'):
 		
 		super(Main, self).__init__()
-		self.setGeometry( 0,35, 1000, 960 )
+		self.setGeometry( 302,38, GetSystemMetrics(0) - 325 - 302, GetSystemMetrics(1) )
 		self.fps_last_time = 0
 		self.fps_frame_count = 0		
 		self.times = []
@@ -53,12 +53,14 @@ class Main(QGLWidget):
 										0.75, 	0.5,		0.5, 	256, 			0, 		0, 	550, 	0], dtype = 'f')
 		self.lightsource_num = 2
 		self.light_size = len(self.light_sources)/self.lightsource_num
-		
+		#								r1	r2	h	k1	k2	dummies
+		self.surface_params = np.array([3., 1., 5., 1., 1., 0, 0, 0 ],dtype = 'f')
 		to_load = surface + '/f.txt'
 		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load, "simulationOfPhotons_end.compute")
 		concat_files_to_shader("parametricSurface_begin.tes", to_load, "parametricSurface_end.tes")
 		
 	def initializeGL(self):
+		pygame.init()
 		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )
 		try:
 			self.photon_birth_program		= create_program(compute_file = "birthOfPhotons.compute")
@@ -70,7 +72,7 @@ class Main(QGLWidget):
 			QtCore.QCoreApplication.quit()
 			sys.exit()
 
-		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num)
+		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic, self.surfaceParamsBuffer = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num, self.surface_params)
 		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture, self.texw, self.texh)
 		glEnable(GL_CULL_FACE)
 
@@ -213,6 +215,7 @@ class Main(QGLWidget):
 		
 	def closeEvent(self, event):
 		print "end"
+		self.close()
 		#delete stuff
 		
 	def keyPressEvent(self, e):
@@ -244,17 +247,32 @@ class Main(QGLWidget):
 		self.last_time = this_time		
 		if not self.in_pause:
 			self.time += self.delta_time
+			
+	def set_max_photon(self, max_photons):
+		self.max_photons = max_photons
+	
+	def set_min_photon_power(self, min_photon_energy):
+		self.min_photon_energy = min_photon_energy
 		
-if __name__ == '__main__':
+	def update_surface(self, params):
+		r1, r2, h, k1, k2 = 0., 0., 0., 0., 0.
+		for k in ['r1', 'r2', 'h', 'k1', 'k2']:
+			if k in params.keys():
+				exec("%s = %f" % (k,params[k]))
+		self.surface_params = np.array([r1, r2, h, k1, k2, 0, 0, 0], dtype = 'f')
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.surfaceParamsBuffer)
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 8*sizeof(c_float),self.surface_params)
+		
+'''if __name__ == '__main__':
 	pygame.init()
 	app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
 	widget = Main()
 	widget.show()
 	app.exec_()
-	print np.mean( widget.times )
+	print np.mean( widget.times )'''
 	
 	
-	'''app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
+'''app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
 	screen = Select_Surface()
 	screen.show()
 	app.exec_()'''

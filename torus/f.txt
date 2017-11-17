@@ -3,10 +3,11 @@
 
 vec3 ff(vec2 uv)
 {
-	float u = uv.x * 2 * 3.1415f;
-	float v = uv.y * 2 * 3.1415f;
-	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
-	float a = 1, c = 4;
-	return vec3( (c+a*cv)*cu, (c+a*cv)*su, a*sv );
+	float pi = 3.1415926535897932384626433832795;
+	float u = uv.x ;
+	float v = uv.y ;
+	float R = radius_1;
+	float r = radius_2; 
+	return vec3( (R+r*cos(v*2*pi))*cos(2*pi*u), (R+r*cos(v*2*pi))*sin(2*pi*u), r*sin(2*pi*v) );
 }
 

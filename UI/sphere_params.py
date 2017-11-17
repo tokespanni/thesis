@@ -13,12 +13,13 @@ class Sphere_Parameters(QtWidgets.QWidget):
 	def __init__(self):
 		QtWidgets.QWidget.__init__(self)
 		self.setupUi()
+		self.setGeometry(1, 410, 300, 130)
 		
 	def setupUi(self):
 		self.setObjectName("Form")
-		self.resize(205, 112)
+		self.resize(300, 130)
 		self.gridLayoutWidget = QtWidgets.QWidget(self)
-		self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 181, 91))
+		self.gridLayoutWidget.setGeometry(QtCore.QRect(40, 10, 181, 91))
 		self.gridLayoutWidget.setObjectName("gridLayoutWidget")
 		self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
 		self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -50,8 +51,9 @@ class Sphere_Parameters(QtWidgets.QWidget):
 		self.pushButton_update.setText(_translate("Form", "Update"))
 		self.label_2.setText(_translate("Form", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt;\">Sphere</span></p></body></html>"))
 	
-'''app = QtWidgets.QApplication(sys.argv)
-
-screen = Sphere_Parameters()
-screen.show()
-sys.exit(app.exec_())'''
+	def get_surface_params(self):
+		params = {'r1': self.doubleSpinBox_r.value()}
+		return params
+	
+	def closeEvent(self, event):
+		self.close()

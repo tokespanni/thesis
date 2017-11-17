@@ -9,7 +9,7 @@ def c_matrix(matrix):
 		matrixElements.append(matrix[i])
 	return (matrixElements)
 
-def genBuffers(light_sources, max_photons, light_size, lightsource_num):
+def genBuffers(light_sources, max_photons, light_size, lightsource_num, surface_params):
 	float_size = sizeof(c_float)
 	int_size = sizeof(c_int)
 	
@@ -58,7 +58,12 @@ def genBuffers(light_sources, max_photons, light_size, lightsource_num):
 	glBufferData(GL_ATOMIC_COUNTER_BUFFER, int_size, np.array([1073741824+max_photons-1], dtype = 'l'), GL_DYNAMIC_DRAW)
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0)
 	
-	return vaos, vbos, lightSourceBuffer, emptyIndices, input_pos, output_pos, photonBuffer, atomic
+	surfaceParamsBuffer = glGenBuffers(1)
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, surfaceParamsBuffer)
+	glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*8, surface_params, GL_STREAM_DRAW)
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+
+	return vaos, vbos, lightSourceBuffer, emptyIndices, input_pos, output_pos, photonBuffer, atomic, surfaceParamsBuffer
 	
 def genFBO(fbo_created, framebuffer, fbo_texture, texw, texh):
 	# if this is called from resize: clean up the previous resources

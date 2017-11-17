@@ -13,12 +13,13 @@ class Cone_Parameters(QtWidgets.QWidget):
 	def __init__(self):
 		QtWidgets.QWidget.__init__(self)
 		self.setupUi()
-		
+		self.setGeometry(1, 410, 300, 142)
+				
 	def setupUi(self):
 		self.setObjectName("Form")
-		self.resize(202, 141)
+		self.resize(300, 142)
 		self.gridLayoutWidget = QtWidgets.QWidget(self)
-		self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 181, 119))
+		self.gridLayoutWidget.setGeometry(QtCore.QRect(40, 10, 181, 119))
 		self.gridLayoutWidget.setObjectName("gridLayoutWidget")
 		self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
 		self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -60,9 +61,10 @@ class Cone_Parameters(QtWidgets.QWidget):
 		self.label.setText(_translate("Form", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt;\">Cone</span></p></body></html>"))
 		self.label_2.setText(_translate("Form", "Height"))
 		self.pushButton_update.setText(_translate("Form", "Update"))
-	
-'''app = QtWidgets.QApplication(sys.argv)
 
-screen = Cone_Parameters()
-screen.show()
-sys.exit(app.exec_())'''
+	def get_surface_params(self):
+		params = {'h': self.doubleSpinBox_h.value(), 'r1': self.doubleSpinBox_r.value()}
+		return params
+		
+	def closeEvent(self, event):
+		self.close()

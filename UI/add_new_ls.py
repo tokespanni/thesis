@@ -14,6 +14,8 @@ class Add_New_LS(QtWidgets.QWidget):
 		QtWidgets.QWidget.__init__(self)
 		self.setupUi()
 		
+		self.pushButton_add.clicked.connect(self.add_new)
+		
 	def setupUi(self):
 		self.setObjectName("Form")
 		self.resize(324, 151)
@@ -78,8 +80,9 @@ class Add_New_LS(QtWidgets.QWidget):
 		self.pushButton_add.setText(_translate("Form", "Add"))
 		self.label.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:12pt;\">Add new light source</span></p></body></html>"))
 	
-'''app = QtWidgets.QApplication(sys.argv)
-
-screen = Add_New_LS()
-screen.show()
-sys.exit(app.exec_())'''
+	def add_new(self):
+		#do stuff
+		self.close()
+		
+	def closeEvent(self, event):
+		self.close()

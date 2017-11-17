@@ -13,12 +13,13 @@ class Torus_Parameters(QtWidgets.QWidget):
 	def __init__(self):
 		QtWidgets.QWidget.__init__(self)
 		self.setupUi()
+		self.setGeometry(1, 410, 300, 142)
 		
 	def setupUi(self):
 		self.setObjectName("Form")
-		self.resize(202, 142)
+		self.resize(300, 142)
 		self.gridLayoutWidget = QtWidgets.QWidget(self)
-		self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 181, 119))
+		self.gridLayoutWidget.setGeometry(QtCore.QRect(40, 10, 181, 119))
 		self.gridLayoutWidget.setObjectName("gridLayoutWidget")
 		self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
 		self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -62,8 +63,9 @@ class Torus_Parameters(QtWidgets.QWidget):
 		self.label_2.setText(_translate("Form", "Radius #1"))
 		self.pushButton_update.setText(_translate("Form", "Update"))
 	
-'''app = QtWidgets.QApplication(sys.argv)
-
-screen = Torus_Parameters()
-screen.show()
-sys.exit(app.exec_())'''
+	def get_surface_params(self):
+		params = {'r1': self.doubleSpinBox_r1.value(), 'r2': self.doubleSpinBox_r2.value()}
+		return params
+	
+	def closeEvent(self, event):
+		self.close()

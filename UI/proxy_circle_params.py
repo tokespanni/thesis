@@ -13,12 +13,13 @@ class Proxy_Circle_Parameters(QtWidgets.QWidget):
 	def __init__(self):
 		QtWidgets.QWidget.__init__(self)
 		self.setupUi()
+		self.setGeometry(1, 410, 300, 166)
 		
 	def setupUi(self):
 		self.setObjectName("Form")
-		self.resize(204, 172)
+		self.resize(300, 166)
 		self.gridLayoutWidget = QtWidgets.QWidget(self)
-		self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 181, 148))
+		self.gridLayoutWidget.setGeometry(QtCore.QRect(40, 10, 181, 148))
 		self.gridLayoutWidget.setObjectName("gridLayoutWidget")
 		self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
 		self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -74,8 +75,9 @@ class Proxy_Circle_Parameters(QtWidgets.QWidget):
 		self.label_2.setText(_translate("Form", "   K_1"))
 		self.label.setText(_translate("Form", "<html><head/><body><p align=\"center\"><span style=\" font-size:12pt;\">Proxy circle</span></p></body></html>"))
 	
-'''app = QtWidgets.QApplication(sys.argv)
-
-screen = Proxy_Circle_Parameters()
-screen.show()
-sys.exit(app.exec_())'''
+	def get_surface_params(self):
+		params = {'k1': self.doubleSpinBox_k1.value(), 'k2': self.doubleSpinBox_k2.value(), 'h': self.doubleSpinBox_h.value()}
+		return params
+		
+	def closeEvent(self, event):
+		self.close()
