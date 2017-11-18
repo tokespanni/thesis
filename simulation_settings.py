@@ -139,15 +139,14 @@ class Simulation_Settings(QtWidgets.QWidget):
 			self.surface_window.show()
 		else:
 			self.surface_window = None
-			
-						
-		self.light_sources_window = Light_Source_Settings()
-		self.light_sources_window.show()
 		
 		self.main_window = Main(surface)
 		self.main_window.set_min_photon_power(self.doubleSpinBox_minpow.value())
 		self.main_window.set_max_photon(self.spinBox_totpho.value())
 		self.main_window.show()
+		
+		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
+		self.light_sources_window.show()
 	
 		if self.surface_window is not None:
 			self.surface_window.pushButton_update.clicked.connect(self.update_surface)

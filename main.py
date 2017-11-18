@@ -24,15 +24,16 @@ class Main(QGLWidget):
 		self.fps_last_time = 0
 		self.fps_frame_count = 0		
 		self.times = []
-		self.texture_program = None
+		
 		self.photon_birth_program = None
 		self.photon_simulation_program = None
+		self.texture_program = None
 		self.param_program = None
+		
 		self.camera = Camera(Vector3(0,0,15), Vector3(0,0,0), Vector3(0,1,0))
 		self.last_time = 0
 		self.delta_time = 0
 		self.fbo_created = False
-		self.light_sources_modified = True
 		self.texw, self.texh = 1024,1024
 		self.framebuffer = None
 		self.fbo_texture = None
@@ -45,16 +46,16 @@ class Main(QGLWidget):
 		self.max_photons = 1024*1024
 		self.free_photons = self.max_photons
 		self.min_photon_energy = 0.03
-								   # Radius_1	 height	 radius_2	 param4
-		self.param_surface_params = [5.,		 5., 	1., 		0.]
-										
-		#								x	y		power	photoncount	from		to	wl		dummy
-		self.light_sources = np.array( [0.25,	0.25,		1,		256,			0,		0,	400,	0,   
-										0.75, 	0.5,		0.5, 	256, 			0, 		0, 	550, 	0], dtype = 'f')
-		self.lightsource_num = 2
-		self.light_size = len(self.light_sources)/self.lightsource_num
+									
+		#								x	y		power	photoncount			from	to	wl		sn
+		self.light_sources = np.array( [0.25,	0.25,		1,		256,		0,		0,	400,	0,  
+										0.75, 	0.5,		0.5, 	256, 		0, 		0, 	550, 	1,
+										0.5, 	0.75,		0.5, 	256, 		0, 		0, 	700, 	2], dtype = 'f')
+		self.lightsource_num = 3
+		self.light_sources_modified = True
+		
 		#								r1	r2	h	k1	k2	dummies
-		self.surface_params = np.array([3., 1., 5., 1., 1., 0, 0, 0 ],dtype = 'f')
+		self.surface_params = np.array([1., 5., 5., 1., 1., 0, 0, 0 ],dtype = 'f')
 		to_load = surface + '/f.txt'
 		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load, "simulationOfPhotons_end.compute")
 		concat_files_to_shader("parametricSurface_begin.tes", to_load, "parametricSurface_end.tes")
@@ -72,7 +73,7 @@ class Main(QGLWidget):
 			QtCore.QCoreApplication.quit()
 			sys.exit()
 
-		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic, self.surfaceParamsBuffer = genBuffers(self.light_sources, self.max_photons, self.light_size, self.lightsource_num, self.surface_params)
+		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic, self.surfaceParamsBuffer = genBuffers(self.light_sources, self.max_photons, self.lightsource_num, self.surface_params)
 		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture, self.texw, self.texh)
 		glEnable(GL_CULL_FACE)
 
@@ -130,10 +131,10 @@ class Main(QGLWidget):
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, self.emptyIndices)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, self.input_pos)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, self.output_pos)
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, self.surfaceParamsBuffer)
 		glUniform1f(0, self.delta_time)
 		glUniform1f(1, self.time)
 		glUniform1f(2, self.min_photon_energy)
-		glUniform4fv(3, 1, self.param_surface_params)
 		glDispatchCompute(self.max_photons, 1, 1)
 		glFinish()
 		glUseProgram(0)
@@ -173,8 +174,8 @@ class Main(QGLWidget):
 		glUniformMatrix4fv(0, 1, GL_FALSE, c_matrix(matWorld))
 		glUniformMatrix4fv(4, 1, GL_FALSE, c_matrix(matWorldIT))
 		glUniformMatrix4fv(8, 1, GL_FALSE, c_matrix(mvp))
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, self.surfaceParamsBuffer)
 		glUniform3fv(12, 1, [self.camera.getEye().x,self.camera.getEye().y, self.camera.getEye().z])
-		glUniform4fv(16, 1, self.param_surface_params)
 		glActiveTexture(GL_TEXTURE0)
 		glBindTexture(GL_TEXTURE_2D, self.fbo_texture)
 		glBindVertexArray(self.vaos)
@@ -205,7 +206,7 @@ class Main(QGLWidget):
 		self.photon_birth_count = int(c_photon_until_now)	
 		
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, self.light_size * self.lightsource_num * sizeof(c_float),self.light_sources)
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0,8 * self.lightsource_num * sizeof(c_float),self.light_sources)
 		self.light_sources_modified = False
 			
 	def resizeGL(self, w, h):
@@ -222,10 +223,6 @@ class Main(QGLWidget):
 		self.camera.keyboardDown(e)
 		if e.key() == Qt.Key_Escape:
 			self.close()
-		if e.key() == Qt.Key_Plus:
-			self.wavelength = min(self.wavelength + 1, 750)
-		if e.key() == Qt.Key_Minus:
-			self.wavelength = max(self.wavelength - 1, 390)
 		if e.key() == Qt.Key_Space:
 			self.in_pause = not self.in_pause
 
@@ -260,9 +257,42 @@ class Main(QGLWidget):
 			if k in params.keys():
 				exec("%s = %f" % (k,params[k]))
 		self.surface_params = np.array([r1, r2, h, k1, k2, 0, 0, 0], dtype = 'f')
+		print self.surface_params
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.surfaceParamsBuffer)
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 8*sizeof(c_float),self.surface_params)
 		
+	def update_lightsource(self, num, x, y, pow, photon_count, wl):
+		#x	y		power	photoncount			from	to	wl		sn
+		self.light_sources[num*8] 	  = x
+		self.light_sources[num*8 + 1] = y
+		self.light_sources[num*8 + 2] = pow
+		self.light_sources[num*8 + 3] = photon_count
+		self.light_sources[num*8 + 4] = 0
+		self.light_sources[num*8 + 5] = 0
+		self.light_sources[num*8 + 6] = wl
+		self.light_sources[num*8 + 7] = num
+		
+		self.light_sources_modified = True
+		
+		
+	'''def added_new_ls(self, x, y, pow, photon_count, wl):
+		self.light_sources = np.concatenate((self.light_sources, np.array([x, y, pow, photon_count, 0, 0, wl, self.lightsource_num], dtype = 'f')), axis = 0)
+		self.lightsource_num += 1
+		
+		lightSourceBuffer = glGenBuffers(1)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSourceBuffer)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*8*lightsource_num, self.light_sources, GL_STREAM_DRAW)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+		
+		self.light_sources_modified = True
+		
+		
+		
+	def delete_ls(self, num):
+		
+		self.lightsource_num -= 1
+		self.light_sources_modified = True'''
+
 '''if __name__ == '__main__':
 	pygame.init()
 	app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])

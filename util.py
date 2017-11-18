@@ -9,7 +9,7 @@ def c_matrix(matrix):
 		matrixElements.append(matrix[i])
 	return (matrixElements)
 
-def genBuffers(light_sources, max_photons, light_size, lightsource_num, surface_params):
+def genBuffers(light_sources, max_photons, lightsource_num, surface_params):
 	float_size = sizeof(c_float)
 	int_size = sizeof(c_int)
 	
@@ -26,7 +26,7 @@ def genBuffers(light_sources, max_photons, light_size, lightsource_num, surface_
 	
 	lightSourceBuffer = glGenBuffers(1)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSourceBuffer)
-	glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*light_size*lightsource_num, light_sources, GL_STREAM_DRAW)
+	glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*8*lightsource_num, light_sources, GL_STREAM_DRAW)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 	
 	indices = np.arange(max_photons, dtype = 'i')
