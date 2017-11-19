@@ -30,73 +30,57 @@ restrict layout(std430, binding = 4) buffer posBuffer2
 {
 	vec4 pos2[];
 };
+
+restrict layout(std430, binding = 5) buffer surfaceParams
+{
+	float params[];
+};
+
 layout(location = 0) uniform float deltaTime;
 layout(location = 1) uniform float totalTime;
-layout(location = 2) uniform int texW;
-layout(location = 3) uniform int texH;
-//cone
+layout(location = 2) uniform float minPhotonEnergy;
+
+float radius_1 = params[0];
+float radius_2 = params[1];
+float height = params[2];
+float k1 = params[3];
+float k2 = params[4];
+
+//Cylinder
 
 vec3 ff(vec2 uv)
 {
-	float u = -uv.x;
-	float v = uv.y * 2 * 3.1415926535897932384626433832795;
-	float cv = cos(v), sv = sin(v);
-	float a = 1;
-	return vec3(a*u*cv, a*u*sv, u);
+	float R = radius_1;
+	float h = height;
+	float pi = 3.1415926535897932384626433832795;
+	float u = uv.x;
+	float v = uv.y;
+	return vec3(R*cos(2*pi*u), -h*v, R*sin(2*pi*u));
 }
 
-vec3 f(vec2 uv)
-{
-	return ff(uv*0.5-0.5);
-}
 
-const float eps = 0.0005;
+#line 2 "simulationOfPhotons_end"
 
-vec3 dfu(vec2 point)
-{
-	vec2 h = vec2(eps, 0);
-	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
-	return (f(p[0]) - 8*f(p[1]) + 8*f(p[2]) - f(p[3]))/(12*h.x); //du
-}
+const float EPS = 0.0005;
+#define DiffMethod2(fn,pt,h) (fn(pt+2*h) - fn(pt-2*h))/(2*EPS)								//second order method
+#define DiffMethod4(fn,pt,h) (fn(pt-2*h) - 8*fn(pt-h) + 8*fn(pt+h) - fn(pt+2*h))/(12*EPS)	//forth order method
+#define DiffU2(fn,pt)		DiffMethod2(fn,pt, vec2(EPS,0))
+#define DiffV2(fn,pt)		DiffMethod2(fn,pt, vec2(0,EPS))
+#define DiffU4(fn,pt)		DiffMethod4(fn,pt, vec2(EPS,0))
+#define DiffV4(fn,pt)		DiffMethod4(fn,pt, vec2(0,EPS))
 
-vec3 dfv(vec2 point)
-{
-	vec2 h = vec2(0, eps);
-	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
-	return (f(p[0]) - 8*f(p[1]) + 8*f(p[2]) - f(p[3]))/(12*h.y); //dv
-}
-
-vec3 dfuu(vec2 point)
-{
-	vec2 h = vec2(eps, 0);
-	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
-	return (dfu(p[0]) - 8*dfu(p[1]) + 8*dfu(p[2]) - dfu(p[3]))/(12*h.x);
-}
-
-vec3 dfvv(vec2 point)
-{
-	vec2 h = vec2(0, eps);
-	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
-	return (dfv(p[0]) - 8*dfv(p[1]) + 8*dfv(p[2]) - dfv(p[3]))/(12*h.y);
-}
-
-vec3 dfuv(vec2 point)
-{
-	vec2 h = vec2(0, eps);
-	vec2 p[4] = {point-2*h, point-h, point+h, point+2*h};
-	return (dfu(p[0]) - 8*dfu(p[1]) + 8*dfu(p[2]) - dfu(p[3]))/(12*h.y);
-}
+vec3 f(vec2 uv){	return ff(uv);}
+//vec3 f(vec2 uv){	return ff(uv);}
+vec3 dfu(vec2 uv){	return DiffU2(f,uv);}
+vec3 dfv(vec2 uv){	return DiffV2(f,uv);}
 
 vec4 F(vec4 Omega)
 {
 	vec2 p = Omega.xy;
 	
-	vec3 duu = dfuu(p);
-	vec3 duv = dfuv(p);
-	vec3 dvv = dfvv(p);
 	mat2x3 df = mat2x3(dfu(p), dfv(p));
-	mat2x3 ddu = mat2x3(duu, duv);
-	mat2x3 ddv = mat2x3(duv, dvv);
+	mat2x3 ddu = mat2x3(DiffU4(dfu,p), DiffV4(dfu,p));
+	mat2x3 ddv = mat2x3(ddu[1],		   DiffV4(dfv,p));
 	
 	mat2 Gauss = transpose(df) *df;
 	float E = Gauss[0][0], F = Gauss[0][1], G = Gauss[1][1];
@@ -116,16 +100,21 @@ vec4 F(vec4 Omega)
 	
 	//Christoffel symbols
 	
-	mat2 K1 = - mat2(G*Eu - 2*F*Fu + F*Ev,   G*Ev - F*Gu,
-				  G*Ev - F*Gu,  2*G*Fv - G*Gu + F*Gv)/denom;
-	mat2 K2 = mat2((2*E*Fu - E*Ev + F*Eu,   E*Gu - F*Ev,
-				  E*Gu - F*Ev,  E*Gv - 2*F*Fv + F*Gu)/denom);
+	float k1_11 = + G*Eu - 2*F*Fu + F*Ev;
+	float k2_11 = - E*Ev + 2*E*Fu - F*Eu;
+	float k1_12 = + G*Ev - F*Gu;
+	float k2_12 = - F*Ev + E*Gu;
+	float k1_22 = - G*Gu + 2*G*Fv - F*Gv;
+	float k2_22 = + E*Gv - 2*F*Fv + F*Gu;
+	
+	mat2 K1 = mat2(k1_11, k1_12, k1_12, k1_22)/denom;
+	mat2 K2 = mat2(k2_11, k2_12, k2_12, k2_22)/denom;
 	
 	vec2 v = Omega.zw;
-	vec2 ddOmega = vec2(
-		-K1[0][0]*v.x * v.x - 2*K1[0][1] * v.x * v.y - K1[1][1] * v.y * v.y,  
-		-K2[0][0]*v.x * v.x - 2*K2[0][1] * v.x * v.y - K2[1][1] * v.y * v.y);
+	vec2 ddOmega = -v*mat2(K1*v, K2*v);
+
 	return vec4(v, ddOmega);
+	
 }
 
 vec4 Euler(vec4 posvel, float delta_t)
@@ -134,7 +123,7 @@ vec4 Euler(vec4 posvel, float delta_t)
 }
 vec4 Midpoint(vec4 yk, float h)
 {
-	return yk + h*F(yk+0.5*F(yk));
+	return yk + h*F(yk+0.5*h*F(yk));
 }
 
 float collision_f(vec2 p)
@@ -148,20 +137,26 @@ void main()
 	if(photons[index].speed == vec2(0)) return;
 	
 	vec2 position = pos1[index].xy;
-	vec2 velocity = photons[index].speed;
-	vec4 posVel = Euler(vec4(position,velocity),deltaTime);
+	vec2 velocity = normalize(photons[index].speed)*0.1;
+	//vec2 velocity = photons[index].speed;
+	vec4 posVel = vec4(position,velocity);
+	const int N = 2;
+	for(int i=0; i<N; ++i)
+		posVel = Midpoint(posVel,deltaTime/float(N));
 	
 	position = posVel.xy;
 	velocity = posVel.zw;
+	float time = totalTime - photons[index].birthTime;
 	
-	if(collision_f(position) < 0)
+	//if(collision_f(position) < 0)
+	if(photons[index].power / time < minPhotonEnergy)
 	{
-		position = vec2(0.75, 0.75);
+		position = vec2(-2, -2);
 		velocity = vec2(0);
 		int i = int(atomicCounterIncrement(counter) - 1073741824);
 		ind[i] = int(index);
 	}
-	
-	pos2[index] = vec4(position,totalTime,0);
+
+	pos2[index] = vec4(position,time,0);
 	photons[index].speed = velocity;
 }

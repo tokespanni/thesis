@@ -8,7 +8,7 @@ from ctypes import sizeof, c_float, c_void_p, c_int
 from math import *
 from camera import *
 import sys
-sys.path.insert(0, 'C:/Users/Panni/thesis_in_Python/pyeuclid')
+#sys.path.insert(0, 'C:/Users/Panni/thesis_in_Python/pyeuclid')
 from euclid import *
 import pygame.time
 import pygame
@@ -20,7 +20,7 @@ class Main(QGLWidget):
 	def __init__(self, surface = 'sphere'):
 		
 		super(Main, self).__init__()
-		self.setGeometry( 302,38, GetSystemMetrics(0) - 325 - 302, GetSystemMetrics(1) )
+		self.setGeometry( 302, 38, GetSystemMetrics(0) - 325 - 302, GetSystemMetrics(1) - 25 )
 		self.fps_last_time = 0
 		self.fps_frame_count = 0		
 		self.times = []
@@ -42,7 +42,7 @@ class Main(QGLWidget):
 		self.in_pause = False
 		
 		self.total_light_power = 0.0
-		self.photon_birth_count = None #16#1024*2
+		self.photon_birth_count = None
 		self.max_photons = 1024*1024
 		self.free_photons = self.max_photons
 		self.min_photon_energy = 0.03
@@ -56,9 +56,11 @@ class Main(QGLWidget):
 		
 		#								r1	r2	h	k1	k2	dummies
 		self.surface_params = np.array([1., 5., 5., 1., 1., 0, 0, 0 ],dtype = 'f')
-		to_load = surface + '/f.txt'
-		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load, "simulationOfPhotons_end.compute")
-		concat_files_to_shader("parametricSurface_begin.tes", to_load, "parametricSurface_end.tes")
+		to_load_function = surface + '/f.txt'
+		to_load_trafo = surface + '/pos_trafo.txt'
+		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load_function, "simulationOfPhotons_end.compute")
+		concat_files_to_shader("parametricSurface_begin.tes", to_load_function, "parametricSurface_end.tes")
+		concat_files_to_shader("renderToTexture_begin.geom", to_load_trafo, "renderToTexture_end.geom") 
 		
 	def initializeGL(self):
 		pygame.init()
@@ -67,7 +69,7 @@ class Main(QGLWidget):
 			self.photon_birth_program		= create_program(compute_file = "birthOfPhotons.compute")
 			self.photon_simulation_program	= create_program(compute_file = "simulationOfPhotons.compute")
 			self.param_program				= create_program(vertex_file = "parametricSurface.vert", fragment_file = "parametricSurface.frag", tess_con_file = "parametricSurface.tcs", tess_eval_file = "parametricSurface.tes")
-			self.texture_program			= create_program(vertex_file = "geom/renderToTexture.vert", fragment_file = "geom/renderToTexture.frag", geom_file = "geom/renderToTexture.geom")
+			self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag", geom_file = "renderToTexture.geom")
 		except Exception as error:
 			print (error)
 			QtCore.QCoreApplication.quit()
@@ -94,12 +96,6 @@ class Main(QGLWidget):
 			self.use_photon_simulation_program()
 			
 			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
-			
-		#debug
-		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, self.atomic)
-		atomicCountDebug = glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER,0,1*sizeof(c_int))
-		self.free_photons = atomicCountDebug[3]*256*256*256+atomicCountDebug[2]*256*256 + atomicCountDebug[1]*256 +atomicCountDebug[0] - 1073741824
-		#print "atomicCountDebug = ", asd	
 		
 		self.use_texture_program()
 		
@@ -210,19 +206,16 @@ class Main(QGLWidget):
 		self.light_sources_modified = False
 			
 	def resizeGL(self, w, h):
-		print w, h
-		print self.size().width(), self.size().height()
 		self.camera.setProjMatrix(55.0, w/float(h), 0.001, 100.0)
 		
 	def closeEvent(self, event):
-		print "end"
 		self.close()
 		#delete stuff
 		
 	def keyPressEvent(self, e):
 		self.camera.keyboardDown(e)
 		if e.key() == Qt.Key_Escape:
-			self.close()
+			self.closeEvent(e)
 		if e.key() == Qt.Key_Space:
 			self.in_pause = not self.in_pause
 
@@ -261,8 +254,16 @@ class Main(QGLWidget):
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.surfaceParamsBuffer)
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 8*sizeof(c_float),self.surface_params)
 		
-	def update_lightsource(self, num, x, y, pow, photon_count, wl):
+	def update_ls(self, num, params):
 		#x	y		power	photoncount			from	to	wl		sn
+		x = params[0]
+		y = params[1]
+		pow = params[2]
+		photon_count = params[3]
+		wl = params[4]
+		
+		print params
+		
 		self.light_sources[num*8] 	  = x
 		self.light_sources[num*8 + 1] = y
 		self.light_sources[num*8 + 2] = pow
@@ -272,7 +273,21 @@ class Main(QGLWidget):
 		self.light_sources[num*8 + 6] = wl
 		self.light_sources[num*8 + 7] = num
 		
+		print self.light_sources
+		
 		self.light_sources_modified = True
+		
+	def add_new_lightsource(self):
+		self.light_sources = np.concatenate((self.light_sources, np.array([0, 0, 512, 1, 0, 0, 380, self.lightsource_num], dtype = 'f')), axis = 0)
+		self.lightsource_num += 1
+		self.light_sources_modified = True
+		
+	'''def update_lightsource(self, lights, n):
+		self.light_sources = lights
+		self.lightsource_num = n
+		self.light_sources_modified = True
+		
+		print self.light_sources, self.lightsource_num'''
 		
 		
 	'''def added_new_ls(self, x, y, pow, photon_count, wl):
@@ -285,24 +300,8 @@ class Main(QGLWidget):
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 		
 		self.light_sources_modified = True
-		
-		
-		
+			
 	def delete_ls(self, num):
 		
 		self.lightsource_num -= 1
 		self.light_sources_modified = True'''
-
-'''if __name__ == '__main__':
-	pygame.init()
-	app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
-	widget = Main()
-	widget.show()
-	app.exec_()
-	print np.mean( widget.times )'''
-	
-	
-'''app = QtWidgets.QApplication(["PyQt OpenGL speed benchmark"])
-	screen = Select_Surface()
-	screen.show()
-	app.exec_()'''

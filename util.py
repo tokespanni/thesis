@@ -2,6 +2,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import numpy as np
 from ctypes import sizeof, c_float, c_void_p, c_int
+import math
 
 def c_matrix(matrix):
 	matrixElements = []
@@ -98,3 +99,65 @@ def concat_files_to_shader(begin, f, end):
 		for fname in [begin, f, end]:
 			with open(fname) as infile:
 				outfile.write(infile.read())
+
+def adjust(color, f):
+	intensityMax = 255
+	gamma = 0.8
+	if color == 0:
+		return 0
+	else:
+		return round(intensityMax * math.pow(color * f, gamma))
+		
+def wavelength_to_rgb(wl):
+	if wl >= 380 and wl < 440:
+		red = -(wl - 440)/(440.0 - 380.0)
+		green = 0
+		blue = 1.0
+		
+	if wl >= 440 and wl < 490:
+		red = 0
+		red = (wl - 440)/(490.0 - 440.0)
+		blue = 1.0
+		
+	if wl >= 490 and wl < 510:
+		red = 0
+		green = 1.0
+		blue = -(wl - 510)/(510.0 - 440.0)
+		
+	if wl >= 510 and wl < 580:
+		red = (wl - 510)/(580.0 - 510.0)
+		green = 1.0
+		blue = 0
+		
+	if wl >= 580 and wl < 645:
+		red = 1.0
+		green = -(wl - 645)/(645.0 - 580.0)
+		blue = 0
+		
+	if wl >= 645 and wl <= 780:
+		red = 1.0
+		green = 0
+		blue = 0		
+	
+	if wl < 380 or wl > 780:
+		red = 0
+		green = 0
+		blue = 0
+		
+	if wl >= 380 and wl < 420:
+		f = 0.3 + 0.7 * (wl -380) / (420.0 - 380.0)
+		
+	if wl >= 420 and wl <= 700:
+		f = 1.0
+		
+	if wl > 700 and wl <= 780:
+		f = 0.3 + 0.7 * (780 - wl) / (780.0 - 700.0)
+		
+	if wl < 380 or wl > 780:
+		f = 0.0
+		
+	r = adjust(red, f)
+	g = adjust(green, f)
+	b = adjust(blue, f)
+	
+	return [r, g, b]

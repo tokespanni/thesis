@@ -3,8 +3,7 @@
 
 float rho(float x, float y)
 {
-	float K1 = 1.0, K2 = 2.0;
-	return (x*x + y*y)/(K1*x*x + K2*y*y);
+	return (x*x + y*y)/(k1*x*x + k2*y*y);
 }
 
 vec3 ff(vec2 uv)

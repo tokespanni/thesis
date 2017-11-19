@@ -9,10 +9,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 sys.path.insert(0, 'C:/Users/Panni/thesis_in_Python/thesis/UI')
-from add_new_ls import *
 from cone_params import *
 from cylinder_params import *
-from nth_ls import *
 from paraboloid_params import *
 from proxy_circle_params import *
 from sphere_params import *
@@ -25,6 +23,9 @@ from win32api import GetSystemMetrics
 class Simulation_Settings(QtWidgets.QWidget):
 	def __init__(self):
 		QtWidgets.QWidget.__init__(self)
+		self.surface_window = None
+		self.light_sources_window = None
+		self.main_window = None
 		self.setupUi()
 		self.chosen_surface = self.radioButton_cyl
 		self.radioButton_cyl.setChecked(True)
@@ -32,13 +33,13 @@ class Simulation_Settings(QtWidgets.QWidget):
 		self.radioButton_con.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_pla.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_sph.toggled.connect(self.on_radio_button_toggled)
-		self.radioButton_new.toggled.connect(self.on_radio_button_toggled)
+		#self.radioButton_new.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_pro.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_cyl.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_par.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_tor.toggled.connect(self.on_radio_button_toggled)
 		
-		self.pushButton_start.clicked.connect(self.start_simulation)		
+		self.pushButton_start.clicked.connect(self.start_simulation)
 		
 	def setupUi(self):
 		self.setObjectName("Form")
@@ -67,9 +68,9 @@ class Simulation_Settings(QtWidgets.QWidget):
 		self.radioButton_sph = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
 		self.radioButton_sph.setObjectName("radioButton_sph")
 		self.gridLayout_3.addWidget(self.radioButton_sph, 3, 1, 1, 1)
-		self.radioButton_new = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
-		self.radioButton_new.setObjectName("radioButton_new")
-		self.gridLayout_3.addWidget(self.radioButton_new, 4, 1, 1, 1)
+		#self.radioButton_new = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
+		#self.radioButton_new.setObjectName("radioButton_new")
+		#self.gridLayout_3.addWidget(self.radioButton_new, 4, 1, 1, 1)
 		self.radioButton_pro = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
 		self.radioButton_pro.setObjectName("radioButton_pro")
 		self.gridLayout_3.addWidget(self.radioButton_pro, 3, 0, 1, 1)
@@ -113,7 +114,7 @@ class Simulation_Settings(QtWidgets.QWidget):
 		self.radioButton_pla.setText(_translate("Form", "Plane"))
 		self.label_5.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:12pt;\">Simulation Settings</span></p></body></html>"))
 		self.radioButton_sph.setText(_translate("Form", "Sphere"))
-		self.radioButton_new.setText(_translate("Form", "New"))
+		#self.radioButton_new.setText(_translate("Form", "New"))
 		self.radioButton_pro.setText(_translate("Form", "Proxy_Circle"))
 		self.radioButton_cyl.setText(_translate("Form", "Cylinder"))
 		self.radioButton_par.setText(_translate("Form", "Paraboloid"))
@@ -141,25 +142,48 @@ class Simulation_Settings(QtWidgets.QWidget):
 			self.surface_window = None
 		
 		self.main_window = Main(surface)
-		self.main_window.set_min_photon_power(self.doubleSpinBox_minpow.value())
-		self.main_window.set_max_photon(self.spinBox_totpho.value())
+		self.main_window.set_min_photon_power(min_pow)
+		self.main_window.set_max_photon(max_photon)
 		self.main_window.show()
 		
 		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
 		self.light_sources_window.show()
 	
 		if self.surface_window is not None:
-			self.surface_window.pushButton_update.clicked.connect(self.update_surface)
+			self.surface_window.pushButton_update.clicked.connect(self.send_updated_surface)
 			
-	def update_surface(self):
+		self.light_sources_window.pushButton_add_new.clicked.connect(self.main_window.add_new_lightsource)
+		
+		for i in range(self.main_window.lightsource_num):
+			self.light_sources_window.pushButton_modify[i].clicked.connect(lambda: self.send_updated_ls(i))
+	
+	def send_updated_ls(self, i):
+		print i
+		params = self.light_sources_window.get_ls_params(i)
+		self.main_window.update_ls(i, params)
+		
+	def add_new_lightsource(self):
+		self.main_window.add_new_lightsource()
+		
+		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
+		self.light_sources_window.show()	
+		
+	def send_updated_surface(self):
 		params = self.surface_window.get_surface_params()
 		self.main_window.update_surface(params)
 		
+	def keyPressEvent(self, e):
+		if e.key() == Qt.Key_Escape:
+			self.closeEvent(e)
+			
 	def closeEvent(self, event):
 		if self.surface_window is not None:
 			self.surface_window.closeEvent(event)
-		self.light_sources_window.closeEvent(event)
-		self.main_window.closeEvent(event)
+		if self.light_sources_window is not None:
+			self.light_sources_window.closeEvent(event)
+		if self.main_window is not None:		
+			self.main_window.closeEvent(event)
+		self.close()
 	
 app = QtWidgets.QApplication(sys.argv)
 

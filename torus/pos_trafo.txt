@@ -1,0 +1,5 @@
+	
+	vec2 pt = floor(p1);
+	vec2 p1_out = (p1-pt)*2-1;
+	vec2 p2_out = (p2-pt)*2-1;
+	

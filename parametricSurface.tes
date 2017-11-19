@@ -14,23 +14,60 @@ out block
 	vec2	uv;
 } Out;
 
+restrict layout(std430, binding = 0) buffer surfaceParams
+{
+	float params[];
+};
+
 layout(location = 0) uniform mat4 world;
 layout(location = 4) uniform mat4 worldIT;
 layout(location = 8) uniform mat4 mvp;
-//paraboloid
+layout(location = 16) uniform vec4 Rhrd;
+
+
+float radius_1 = params[0];
+float radius_2 = params[1];
+float height = params[2];
+float k1 = params[3];
+float k2 = params[4];
+//Cylinder
 
 vec3 ff(vec2 uv)
 {
+	float R = radius_1;
+	float h = height;
+	float pi = 3.1415926535897932384626433832795;
 	float u = uv.x;
-	float v = uv.y * 2 * 3.1415f;
-	float cu = cos(u), su = sin(u), cv = cos(v), sv = sin(v);
-	float a = 2, h = 5;
-	return vec3( a*sqrt(u/h)*cv, u, a*sqrt(u/h)*sv );
+	float v = uv.y;
+	return vec3(R*cos(2*pi*u), -h*v, R*sin(2*pi*u));
 }
+
+
+
+#line 2 "paramtericSurface_end.tes"
 
 vec3 f(vec2 uv)
 {
 	return ff(uv.xy);
+}
+
+vec3 computeNormal(vec2 uv)
+{
+	float h = 0.01;
+	vec3 du, dv, du1, dv1;
+	
+	du = f(uv + vec2(h, h)) - f(uv + vec2(-h, h));
+	du1 = f(uv + vec2(h, 0)) - f(uv + vec2(-h, 0));
+	if(dot(du1,du1) > dot(du,du)) dv = du1;
+	du1 = f(uv + vec2(h,-h)) - f(uv + vec2(-h,-h));
+	if(dot(du1,du1) > dot(du,du)) dv = du1;
+	
+	dv = f(uv + vec2( h,h)) - f(uv + vec2( h,-h));
+	dv1 = f(uv + vec2( 0,h)) - f(uv + vec2( 0,-h));
+	if(dot(dv1,dv1) > dot(dv,dv)) dv = dv1;
+	dv1 = f(uv + vec2(-h,h)) - f(uv + vec2(-h,-h));
+	if(dot(dv1,dv1) > dot(dv,dv)) dv = dv1;
+	return normalize(cross(dv, du));
 }
 
 void main()
@@ -39,12 +76,9 @@ void main()
 	float v = gl_TessCoord.y;
 	
 	vec3 pt = In[0].pos + f(vec2(u, v));
+	vec3 n = computeNormal(vec2(u,v));
 	
 	gl_Position = mvp*vec4(pt, 1);
-	float h = 0.01;
-	vec3 du = (f(vec2(u+h,v))-f(vec2(u-h,v))) / (2*h);
-	vec3 dv = (f(vec2(u,v+h))-f(vec2(u,v-h))) / (2*h);
-	vec3 n = normalize(cross(dv,du));
 
 	Out.pos = (world*vec4(pt,1)).xyz;
 	Out.n   = (worldIT*vec4(n,0)).xyz;

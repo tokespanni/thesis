@@ -7,6 +7,6 @@ vec3 ff(vec2 uv)
 	float u = uv.x;
 	float v = uv.y;
 	float pi = 3.1415926535897932384626433832795;
-	return vec3( v*sin(u*2*pi), -v*v*h, v*cos(u*2*pi));
+	return vec3( -v*sin(u*2*pi), v*cos(u*2*pi), v*v*h);
 }
 

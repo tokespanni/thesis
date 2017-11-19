@@ -1,0 +1,8 @@
+*.pyc
+/.env/
+/.env3/
+/.eggs/
+/*.egg-info/
+/.cache/
+/.coverage
+*.html

@@ -6,8 +6,8 @@ vec3 ff(vec2 uv)
 	float pi = 3.1415926535897932384626433832795;
 	float u = uv.x ;
 	float v = uv.y ;
-	float R = radius_1;
-	float r = radius_2; 
+	float R = radius_2;
+	float r = radius_1; 
 	return vec3( (R+r*cos(v*2*pi))*cos(2*pi*u), (R+r*cos(v*2*pi))*sin(2*pi*u), r*sin(2*pi*v) );
 }
 
