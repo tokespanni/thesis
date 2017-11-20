@@ -38,14 +38,13 @@ class Light_Source_Settings(QtWidgets.QWidget):
 		self.gridLayout.addWidget(self.pushButton_add_new, 2, 0, 1, 1)
 		self.minimap = QtWidgets.QGraphicsView(self.gridLayoutWidget)
 		self.minimap.setObjectName("minimap")
-		self.gridLayout.addWidget(self.minimap, 1, 0, 1, 1)
-		
+		self.gridLayout.addWidget(self.minimap, 1, 0, 1, 1)		
 		self.setMinimap()
 		
 		self.generate_light_sources()
-	
+		
 		self.retranslateUi()
-	
+		
 	def retranslateUi(self):
 		_translate = QtCore.QCoreApplication.translate
 		self.setWindowTitle(_translate("Form", "Light Source Settings"))

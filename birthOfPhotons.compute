@@ -57,7 +57,6 @@ photon photon_pos_angle_wavelength()
 	photon p;
 	p.dummy = vec3(0);
 	p.dummy.xy = lights[i].pos;
-	//p.speed = lights[i].dummy * vec2(cos(alpha), sin(alpha)) * 0.1;
 	p.speed = vec2(cos(alpha), sin(alpha)) * 0.1;
 	p.birthTime = totalTime;
 	p.power = lights[i].power;
@@ -76,16 +75,6 @@ void main()
 	else
 	{
 		int index = ind[i-1073741824];
-		/*vec4 paw = photon_pos_angle_wavelength();
-		photon p;
-		pos[index].xy = paw.xy;
-		pos[index].z = totalTime;
-		p.speed = vec2(cos(paw.z), sin(paw.z)) * 0.1;
-		p.birthTime = totalTime;
-		p.power = totalPower / photonBirthCount;
-		p.wavelength = paw.w;
-		p.dummy = vec3(0, 0, 0);
-		*/
 		photon p = photon_pos_angle_wavelength();
 		pos[index].xy = p.dummy.xy;
 		pos[index].z = p.birthTime;

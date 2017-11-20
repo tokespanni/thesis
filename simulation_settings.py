@@ -33,7 +33,6 @@ class Simulation_Settings(QtWidgets.QWidget):
 		self.radioButton_con.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_pla.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_sph.toggled.connect(self.on_radio_button_toggled)
-		#self.radioButton_new.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_pro.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_cyl.toggled.connect(self.on_radio_button_toggled)
 		self.radioButton_par.toggled.connect(self.on_radio_button_toggled)
@@ -121,8 +120,6 @@ class Simulation_Settings(QtWidgets.QWidget):
 		
 	def on_radio_button_toggled(self):
 		self.chosen_surface = self.sender()
-		if self.chosen_surface.isChecked():
-			print("Selected surface is %s" % (self.chosen_surface.text()))
 			
 			
 	class Updater:
@@ -179,17 +176,6 @@ class Simulation_Settings(QtWidgets.QWidget):
 			self.surface_window.pushButton_update.clicked.connect(self.send_updated_surface)
 			
 		self.light_sources_updater()
-		
-	'''def send_updated_ls(self, clb):
-		clb.update_callback()
-		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
-		self.light_sources_window.show()
-		self.light_sources_updater()
-	def send_deleted_ls(self, clb):
-		clb.delete_callback()
-		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
-		self.light_sources_window.show()
-		self.light_sources_updater()'''
 		
 	def add_new_lightsource(self):
 		self.main_window.add_new_lightsource()		

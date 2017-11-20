@@ -44,8 +44,6 @@ vec3 ff(vec2 uv)
 
 
 
-#line 2 "paramtericSurface_end.tes"
-
 vec3 f(vec2 uv)
 {
 	return ff(uv.xy);

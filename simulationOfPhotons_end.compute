@@ -9,7 +9,6 @@ const float EPS = 0.0005;
 #define DiffV4(fn,pt)		DiffMethod4(fn,pt, vec2(0,EPS))
 
 vec3 f(vec2 uv){	return ff(uv);}
-//vec3 f(vec2 uv){	return ff(uv);}
 vec3 dfu(vec2 uv){	return DiffU2(f,uv);}
 vec3 dfv(vec2 uv){	return DiffV2(f,uv);}
 
@@ -65,10 +64,6 @@ vec4 Midpoint(vec4 yk, float h)
 	return yk + h*F(yk+0.5*h*F(yk));
 }
 
-float collision_f(vec2 p)
-{
-	return 0.9 - length(p);
-}
 
 void main()
 {	
@@ -77,7 +72,6 @@ void main()
 	
 	vec2 position = pos1[index].xy;
 	vec2 velocity = normalize(photons[index].speed)*0.1;
-	//vec2 velocity = photons[index].speed;
 	vec4 posVel = vec4(position,velocity);
 	const int N = 2;
 	for(int i=0; i<N; ++i)
@@ -87,7 +81,6 @@ void main()
 	velocity = posVel.zw;
 	float time = totalTime - photons[index].birthTime;
 	
-	//if(collision_f(position) < 0)
 	if(photons[index].power / time < minPhotonEnergy)
 	{
 		position = vec2(-2, -2);

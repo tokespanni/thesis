@@ -22,7 +22,6 @@ class Main(QGLWidget):
 		self.setGeometry( 302, 38, GetSystemMetrics(0) - 325 - 302, GetSystemMetrics(1) - 25 )
 		self.fps_last_time = 0
 		self.fps_frame_count = 0		
-		self.times = []
 		
 		self.photon_birth_program = None
 		self.photon_simulation_program = None
@@ -46,11 +45,11 @@ class Main(QGLWidget):
 		self.free_photons = self.max_photons
 		self.min_photon_energy = 0.03
 									
-		#								x	y		power	photoncount			from	to	wl		sn
-		self.light_sources = np.array( [0.25,	0.25,		1,		256,		0,		0,	400,	0,  
-										0.75, 	0.5,		0.5, 	256, 		0, 		0, 	550, 	1,
-										0.5, 	0.75,		0.5, 	256, 		0, 		0, 	700, 	2], dtype = 'f')
-		self.lightsource_num = 3
+		#								x	y		power	photoncount			from	to	wl		dummy
+		self.light_sources = np.array( [0.25,	0.25,		1,		128,		0,		0,	400,	0,  
+										0.75, 	0.5,		0.5, 	128, 		0, 		0, 	550, 	0,
+										0.5, 	0.75,		0.5, 	128, 		0, 		0, 	700, 	0], dtype = 'f')
+		self.lightsource_num = len(self.light_sources)/8
 		self.light_sources_modified = True
 		
 		#								r1	r2	h	k1	k2	dummies
@@ -97,9 +96,7 @@ class Main(QGLWidget):
 			glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT)
 		
 		self.use_texture_program()
-		
-		#glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT)
-		
+				
 		self.use_param_program()
 		
 		self.update()
@@ -186,7 +183,6 @@ class Main(QGLWidget):
 		if self.fps_delta_time >= 1:
 			if self.fps_frame_count:
 				self.setWindowTitle( str(1000.0*float(self.fps_delta_time)/self.fps_frame_count) + " ms, " + str(self.fps_frame_count) + " FPS" + " free photons = " + str(self.free_photons))
-				self.times.append( self.fps_frame_count )
 			self.fps_frame_count = 0
 			self.fps_last_time = time.time()
 				
@@ -252,7 +248,6 @@ class Main(QGLWidget):
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 8*sizeof(c_float),self.surface_params)
 		
 	def update_ls(self, num, params):
-		#x	y		power	photoncount			from	to	wl		sn
 		x = params[0]
 		y = params[1]
 		pow = params[2]
@@ -266,12 +261,12 @@ class Main(QGLWidget):
 		self.light_sources[num*8 + 4] = 0
 		self.light_sources[num*8 + 5] = 0
 		self.light_sources[num*8 + 6] = wl
-		self.light_sources[num*8 + 7] = num
+		self.light_sources[num*8 + 7] = 0
 		
 		self.light_sources_modified = True
 		
 	def add_new_lightsource(self):
-		self.light_sources = np.concatenate((self.light_sources, np.array([0.5, 0.5, 1, 256, 0, 0, 450, self.lightsource_num], dtype = 'f')), axis = 0)
+		self.light_sources = np.concatenate((self.light_sources, np.array([0.5, 0.5, 1, 128, 0, 0, 450, 0], dtype = 'f')), axis = 0)
 		self.lightsource_num += 1
 		
 		self.lightSourceBuffer = glGenBuffers(1)
@@ -282,7 +277,7 @@ class Main(QGLWidget):
 		self.light_sources_modified = True
 			
 	def delete_ls(self, num):
-		light_sources_b = self.light_sources[:(0 if (num)*8 - 1 < 0 else (num)*8 - 1) ]
+		light_sources_b = self.light_sources[:(0 if (num)*8 < 0 else (num)*8) ]
 		light_sources_e = self.light_sources[(num + 1)*8:]
 		self.light_sources = np.concatenate((light_sources_b, light_sources_e), axis = 0)
 		self.lightsource_num -= 1
