@@ -260,8 +260,6 @@ class Main(QGLWidget):
 		photon_count = params[3]
 		wl = params[4]
 		
-		print params
-		
 		self.light_sources[num*8] 	  = x
 		self.light_sources[num*8 + 1] = y
 		self.light_sources[num*8 + 2] = pow
@@ -271,12 +269,11 @@ class Main(QGLWidget):
 		self.light_sources[num*8 + 6] = wl
 		self.light_sources[num*8 + 7] = num
 		
-		print self.light_sources
-		
 		self.light_sources_modified = True
+		print num, "modified"
 		
 	def add_new_lightsource(self):
-		self.light_sources = np.concatenate((self.light_sources, np.array([0.5, 0.5, 512, 1, 0, 0, 380, self.lightsource_num], dtype = 'f')), axis = 0)
+		self.light_sources = np.concatenate((self.light_sources, np.array([0.5, 0.5, 1, 256, 0, 0, 450, self.lightsource_num], dtype = 'f')), axis = 0)
 		self.lightsource_num += 1
 		
 		self.lightSourceBuffer = glGenBuffers(1)
@@ -284,22 +281,17 @@ class Main(QGLWidget):
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(c_float)*8*self.lightsource_num, self.light_sources, GL_STREAM_DRAW)
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 	
-		print self.light_sources, self.lightsource_num
 		self.light_sources_modified = True
 			
 	def delete_ls(self, num):
-		light_sources_b = self.light_sources[:(num)*8 - 1]
+		light_sources_b = self.light_sources[:(0 if (num)*8 - 1 < 0 else (num)*8 - 1) ]
 		light_sources_e = self.light_sources[(num + 1)*8:]
-		
-		print light_sources_b
-		print light_sources_e
-		
 		self.light_sources = np.concatenate((light_sources_b, light_sources_e), axis = 0)
 		self.lightsource_num -= 1
-		
 		self.lightSourceBuffer = glGenBuffers(1)
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(c_float)*8*self.lightsource_num, self.light_sources, GL_STREAM_DRAW)
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 		
 		self.light_sources_modified = True
+		print num, "deleted"

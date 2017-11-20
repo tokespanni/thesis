@@ -18,6 +18,8 @@ class Light_Source_Settings(QtWidgets.QWidget):
 		QtWidgets.QWidget.__init__(self)	
 		self.lights = lights
 		self.n = n
+		print self.lights
+		print self.n
 		self.setupUi()
 		self.setGeometry(GetSystemMetrics(0) - 325, 38, 325, GetSystemMetrics(1) - 25)
 		
@@ -64,20 +66,14 @@ class Light_Source_Settings(QtWidgets.QWidget):
 			self.pushButton_modify[i].setText(_translate("Form", "Modify"))
 	
 	def get_ls_params(self, i):
-		print i
 		return self.doubleSpinBox_xpos[i].value(), self.doubleSpinBox_ypos[i].value(), self.doubleSpinBox_pow[i].value(), self.spinBox_ppf[i].value(), self.horizontalSlider[i].value()
 		
 	def closeEvent(self, event):
 		self.close()
 		
-	def addLight(self):
-		print "adodj mar hozza!"
-		#self.n +=1
-		self.pushButton_delete.append( QtWidgets.QWidget(self) )
-		self.update()
-		
 	def update(self):
 		self.generate_light_sources()
+		self.setMinimap()
 				
 	def generate_light_sources(self):
 		n = self.n
@@ -173,4 +169,4 @@ class Light_Source_Settings(QtWidgets.QWidget):
 		
 		self.minimap.setScene(self.minimap.scene)
 		self.minimap.scene.setBackgroundBrush(QtCore.Qt.black)
-		print self.minimap.scene.sceneRect()
+		#print self.minimap.scene.sceneRect()

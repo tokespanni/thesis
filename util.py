@@ -116,7 +116,7 @@ def wavelength_to_rgb(wl):
 		
 	if wl >= 440 and wl < 490:
 		red = 0
-		red = (wl - 440)/(490.0 - 440.0)
+		green = (wl - 440)/(490.0 - 440.0)
 		blue = 1.0
 		
 	if wl >= 490 and wl < 510:

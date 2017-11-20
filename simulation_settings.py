@@ -133,12 +133,31 @@ class Simulation_Settings(QtWidgets.QWidget):
 			self.idx = i
 			self.win = None
 			
-		def Callback(self):
+		def update_callback(self):
 			print self.idx
 			params = self.win.light_sources_window.get_ls_params(self.idx)
 			self.win.main_window.update_ls(self.idx, params)
+			self.win.light_sources_window = Light_Source_Settings(self.win.main_window.light_sources, self.win.main_window.lightsource_num)
+			self.win.light_sources_window.show()
+			self.win.light_sources_updater()
+			
+		def delete_callback(self):
+			print self.idx
+			self.win.main_window.delete_ls(self.idx)
+			self.win.light_sources_window = Light_Source_Settings(self.win.main_window.light_sources, self.win.main_window.lightsource_num)
+			self.win.light_sources_window.show()
+			self.win.light_sources_updater()
 	
-	
+	def light_sources_updater(self):
+		self.light_sources_window.pushButton_add_new.clicked.connect(self.add_new_lightsource)
+		self.callbacks = []
+		for i in range(self.main_window.lightsource_num):
+			clb = Simulation_Settings.Updater(i)
+			clb.win = self
+			self.callbacks.append(clb)
+			self.light_sources_window.pushButton_modify[i].clicked.connect( clb.update_callback )
+			self.light_sources_window.pushButton_delete[i].clicked.connect( clb.delete_callback )
+			
 	def start_simulation(self):
 		self.setGeometry(1, 38, 301, 333)
 		
@@ -164,36 +183,24 @@ class Simulation_Settings(QtWidgets.QWidget):
 		if self.surface_window is not None:
 			self.surface_window.pushButton_update.clicked.connect(self.send_updated_surface)
 			
-		self.light_sources_window.pushButton_add_new.clicked.connect(self.add_new_lightsource)			
+		self.light_sources_updater()
 		
-		self.callbacks = []
-		for i in range(self.main_window.lightsource_num):
-			print "setting", i
-			clb = Simulation_Settings.Updater(i)
-			clb.win = self
-			self.callbacks.append(clb)
-			self.light_sources_window.pushButton_modify[i].clicked.connect( clb.Callback )
-	
-		for i in range(self.main_window.lightsource_num):
-			self.light_sources_window.pushButton_delete[i].clicked.connect(lambda: self.send_deleted_ls(i))
-			
-	def send_updated_ls(self, i):
-		params = self.light_sources_window.get_ls_params(i)
-		self.main_window.update_ls(i, params)
-	
-	def send_deleted_ls(self, i):
-		self.main_window.delete_ls(i)
-		
-	def add_new_lightsource(self):
-		self.main_window.add_new_lightsource()
-		#print "..."
-		#self.light_sources_window.addLight()
-		#self.main_window.add_new_lightsource()
-		
+	'''def send_updated_ls(self, clb):
+		clb.update_callback()
 		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
 		self.light_sources_window.show()
+		self.light_sources_updater()
+	def send_deleted_ls(self, clb):
+		clb.delete_callback()
+		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
+		self.light_sources_window.show()
+		self.light_sources_updater()'''
 		
-		self.light_sources_window.update()
+	def add_new_lightsource(self):
+		self.main_window.add_new_lightsource()		
+		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
+		self.light_sources_window.show()
+		self.light_sources_updater()
 		
 	def send_updated_surface(self):
 		params = self.surface_window.get_surface_params()
