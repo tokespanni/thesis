@@ -8,7 +8,6 @@ from ctypes import sizeof, c_float, c_void_p, c_int
 from math import *
 from camera import *
 import sys
-#sys.path.insert(0, 'C:/Users/Panni/thesis_in_Python/pyeuclid')
 from euclid import *
 import pygame.time
 import pygame
@@ -210,7 +209,6 @@ class Main(QGLWidget):
 		
 	def closeEvent(self, event):
 		self.close()
-		#delete stuff
 		
 	def keyPressEvent(self, e):
 		self.camera.keyboardDown(e)
@@ -278,30 +276,30 @@ class Main(QGLWidget):
 		self.light_sources_modified = True
 		
 	def add_new_lightsource(self):
-		self.light_sources = np.concatenate((self.light_sources, np.array([0, 0, 512, 1, 0, 0, 380, self.lightsource_num], dtype = 'f')), axis = 0)
-		self.lightsource_num += 1
-		self.light_sources_modified = True
-		
-	'''def update_lightsource(self, lights, n):
-		self.light_sources = lights
-		self.lightsource_num = n
-		self.light_sources_modified = True
-		
-		print self.light_sources, self.lightsource_num'''
-		
-		
-	'''def added_new_ls(self, x, y, pow, photon_count, wl):
-		self.light_sources = np.concatenate((self.light_sources, np.array([x, y, pow, photon_count, 0, 0, wl, self.lightsource_num], dtype = 'f')), axis = 0)
+		self.light_sources = np.concatenate((self.light_sources, np.array([0.5, 0.5, 512, 1, 0, 0, 380, self.lightsource_num], dtype = 'f')), axis = 0)
 		self.lightsource_num += 1
 		
-		lightSourceBuffer = glGenBuffers(1)
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSourceBuffer)
-		glBufferData(GL_SHADER_STORAGE_BUFFER, float_size*8*lightsource_num, self.light_sources, GL_STREAM_DRAW)
+		self.lightSourceBuffer = glGenBuffers(1)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(c_float)*8*self.lightsource_num, self.light_sources, GL_STREAM_DRAW)
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
-		
+	
+		print self.light_sources, self.lightsource_num
 		self.light_sources_modified = True
 			
 	def delete_ls(self, num):
+		light_sources_b = self.light_sources[:(num)*8 - 1]
+		light_sources_e = self.light_sources[(num + 1)*8:]
 		
+		print light_sources_b
+		print light_sources_e
+		
+		self.light_sources = np.concatenate((light_sources_b, light_sources_e), axis = 0)
 		self.lightsource_num -= 1
-		self.light_sources_modified = True'''
+		
+		self.lightSourceBuffer = glGenBuffers(1)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.lightSourceBuffer)
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(c_float)*8*self.lightsource_num, self.light_sources, GL_STREAM_DRAW)
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
+		
+		self.light_sources_modified = True

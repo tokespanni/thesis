@@ -157,10 +157,16 @@ class Simulation_Settings(QtWidgets.QWidget):
 		for i in range(self.main_window.lightsource_num):
 			self.light_sources_window.pushButton_modify[i].clicked.connect(lambda: self.send_updated_ls(i))
 	
+		for i in range(self.main_window.lightsource_num):
+			self.light_sources_window.pushButton_delete[i].clicked.connect(lambda: self.send_deleted_ls(i))
+			
 	def send_updated_ls(self, i):
 		print i
 		params = self.light_sources_window.get_ls_params(i)
 		self.main_window.update_ls(i, params)
+	
+	def send_deleted_ls(self, i):
+		self.main_window.delete_ls(i)
 		
 	def add_new_lightsource(self):
 		self.main_window.add_new_lightsource()
