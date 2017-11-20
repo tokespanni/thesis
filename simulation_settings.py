@@ -127,6 +127,18 @@ class Simulation_Settings(QtWidgets.QWidget):
 		if self.chosen_surface.isChecked():
 			print("Selected surface is %s" % (self.chosen_surface.text()))
 			
+			
+	class Updater:
+		def __init__(self, i):
+			self.idx = i
+			self.win = None
+			
+		def Callback(self):
+			print self.idx
+			params = self.win.light_sources_window.get_ls_params(self.idx)
+			self.win.main_window.update_ls(self.idx, params)
+	
+	
 	def start_simulation(self):
 		self.setGeometry(1, 38, 301, 333)
 		
@@ -152,16 +164,20 @@ class Simulation_Settings(QtWidgets.QWidget):
 		if self.surface_window is not None:
 			self.surface_window.pushButton_update.clicked.connect(self.send_updated_surface)
 			
-		self.light_sources_window.pushButton_add_new.clicked.connect(self.main_window.add_new_lightsource)
+		self.light_sources_window.pushButton_add_new.clicked.connect(self.add_new_lightsource)			
 		
+		self.callbacks = []
 		for i in range(self.main_window.lightsource_num):
-			self.light_sources_window.pushButton_modify[i].clicked.connect(lambda: self.send_updated_ls(i))
+			print "setting", i
+			clb = Simulation_Settings.Updater(i)
+			clb.win = self
+			self.callbacks.append(clb)
+			self.light_sources_window.pushButton_modify[i].clicked.connect( clb.Callback )
 	
 		for i in range(self.main_window.lightsource_num):
 			self.light_sources_window.pushButton_delete[i].clicked.connect(lambda: self.send_deleted_ls(i))
 			
 	def send_updated_ls(self, i):
-		print i
 		params = self.light_sources_window.get_ls_params(i)
 		self.main_window.update_ls(i, params)
 	
@@ -170,9 +186,14 @@ class Simulation_Settings(QtWidgets.QWidget):
 		
 	def add_new_lightsource(self):
 		self.main_window.add_new_lightsource()
+		#print "..."
+		#self.light_sources_window.addLight()
+		#self.main_window.add_new_lightsource()
 		
 		self.light_sources_window = Light_Source_Settings(self.main_window.light_sources, self.main_window.lightsource_num)
-		self.light_sources_window.show()	
+		self.light_sources_window.show()
+		
+		self.light_sources_window.update()
 		
 	def send_updated_surface(self):
 		params = self.surface_window.get_surface_params()

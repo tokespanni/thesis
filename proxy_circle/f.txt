@@ -10,7 +10,7 @@ vec3 ff(vec2 uv)
 {
 	float h = height;
 	float pi = 3.1415926535897932384626433832795;
-	float u = uv.x*2*pi;
+	float u = uv.x*pi;
 	float v = uv.y*2*pi;
 	return rho(u,v) * vec3(cos(v)*sin(u), sin(v)*sin(u), cos(u)-1);
 }
