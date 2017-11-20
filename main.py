@@ -54,7 +54,7 @@ class Main(QGLWidget):
 		self.light_sources_modified = True
 		
 		#								r1	r2	h	k1	k2	dummies
-		self.surface_params = np.array([1., 5., 5., 1., 1., 0, 0, 0 ],dtype = 'f')
+		self.surface_params = np.array([1., 5., 5., 1., 2., 0, 0, 0 ],dtype = 'f')
 		to_load_function = surface + '/f.txt'
 		to_load_trafo = surface + '/pos_trafo.txt'
 		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load_function, "simulationOfPhotons_end.compute")
@@ -248,7 +248,6 @@ class Main(QGLWidget):
 			if k in params.keys():
 				exec("%s = %f" % (k,params[k]))
 		self.surface_params = np.array([r1, r2, h, k1, k2, 0, 0, 0], dtype = 'f')
-		print self.surface_params
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, self.surfaceParamsBuffer)
 		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 8*sizeof(c_float),self.surface_params)
 		
@@ -270,7 +269,6 @@ class Main(QGLWidget):
 		self.light_sources[num*8 + 7] = num
 		
 		self.light_sources_modified = True
-		print num, "modified"
 		
 	def add_new_lightsource(self):
 		self.light_sources = np.concatenate((self.light_sources, np.array([0.5, 0.5, 1, 256, 0, 0, 450, self.lightsource_num], dtype = 'f')), axis = 0)
@@ -294,4 +292,3 @@ class Main(QGLWidget):
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0)
 		
 		self.light_sources_modified = True
-		print num, "deleted"

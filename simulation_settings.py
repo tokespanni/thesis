@@ -68,9 +68,6 @@ class Simulation_Settings(QtWidgets.QWidget):
 		self.radioButton_sph = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
 		self.radioButton_sph.setObjectName("radioButton_sph")
 		self.gridLayout_3.addWidget(self.radioButton_sph, 3, 1, 1, 1)
-		#self.radioButton_new = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
-		#self.radioButton_new.setObjectName("radioButton_new")
-		#self.gridLayout_3.addWidget(self.radioButton_new, 4, 1, 1, 1)
 		self.radioButton_pro = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
 		self.radioButton_pro.setObjectName("radioButton_pro")
 		self.gridLayout_3.addWidget(self.radioButton_pro, 3, 0, 1, 1)
@@ -134,7 +131,6 @@ class Simulation_Settings(QtWidgets.QWidget):
 			self.win = None
 			
 		def update_callback(self):
-			print self.idx
 			params = self.win.light_sources_window.get_ls_params(self.idx)
 			self.win.main_window.update_ls(self.idx, params)
 			self.win.light_sources_window = Light_Source_Settings(self.win.main_window.light_sources, self.win.main_window.lightsource_num)
@@ -142,7 +138,6 @@ class Simulation_Settings(QtWidgets.QWidget):
 			self.win.light_sources_updater()
 			
 		def delete_callback(self):
-			print self.idx
 			self.win.main_window.delete_ls(self.idx)
 			self.win.light_sources_window = Light_Source_Settings(self.win.main_window.light_sources, self.win.main_window.lightsource_num)
 			self.win.light_sources_window.show()

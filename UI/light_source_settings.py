@@ -18,8 +18,6 @@ class Light_Source_Settings(QtWidgets.QWidget):
 		QtWidgets.QWidget.__init__(self)	
 		self.lights = lights
 		self.n = n
-		print self.lights
-		print self.n
 		self.setupUi()
 		self.setGeometry(GetSystemMetrics(0) - 325, 38, 325, GetSystemMetrics(1) - 25)
 		
@@ -169,4 +167,3 @@ class Light_Source_Settings(QtWidgets.QWidget):
 		
 		self.minimap.setScene(self.minimap.scene)
 		self.minimap.scene.setBackgroundBrush(QtCore.Qt.black)
-		#print self.minimap.scene.sceneRect()

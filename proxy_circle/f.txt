@@ -1,18 +1,21 @@
 
 //proxy circle
 
-float rho(float x, float y)
+float rho(float u)
 {
-	return (x*x + y*y)/(k1*x*x + k2*y*y);
+	float c = cos(u);
+  
+	float s = sin(u);
+ 
+	return 1/( c*c*k1 + s*s*k2);
 }
 
 vec3 ff(vec2 uv)
 {
-	float h = height;
 	float pi = 3.1415926535897932384626433832795;
-	float u = uv.x*pi;
+	float u = uv.x*2*pi;
 	float v = uv.y*2*pi;
-	return rho(u,v) * vec3(cos(v)*sin(u), sin(v)*sin(u), cos(u)-1);
+	return rho(u) * vec3(cos(v)*cos(u), sin(u)*cos(v), -sin(v)-1);
 }
 
 
