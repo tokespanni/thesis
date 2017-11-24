@@ -58,7 +58,7 @@ class Light_Source_Settings(QtWidgets.QWidget):
 			self.label_x[i].setText(_translate("Form", "  x  ")) #label_x_0
 			self.label_ppf[i].setText(_translate("Form", "Photons per frame")) #label_ppf_0
 			self.label_wl[i].setText(_translate("Form", "Wavelength")) #label_wl_0
-			self.label_num[i].setText(_translate("Form", "num")) #label_num_0
+			self.label_num[i].setText(_translate("Form", str(self.horizontalSlider[i].value()))) #label_num_0
 			self.pushButton_delete[i].setText(_translate("Form", "Delete")) #pushButton_delete_0
 			self.pushButton_modify[i].setText(_translate("Form", "Modify"))
 	
@@ -100,6 +100,7 @@ class Light_Source_Settings(QtWidgets.QWidget):
 			self.gridLayouts[i].setObjectName("gridLayout_" + str(i))
 			self.doubleSpinBox_ypos[i] = QtWidgets.QDoubleSpinBox(self.widgets[i])
 			self.doubleSpinBox_ypos[i].setMaximum(1.0)
+			self.doubleSpinBox_ypos[i].setMinimum(0.0)
 			self.doubleSpinBox_ypos[i].setSingleStep(0.1)
 			self.doubleSpinBox_ypos[i].setProperty("value", float(self.lights[8*i+1]))
 			self.doubleSpinBox_ypos[i].setObjectName("doubleSpinBox_ypos_" + str(i))
@@ -113,18 +114,21 @@ class Light_Source_Settings(QtWidgets.QWidget):
 			self.gridLayouts[i].addWidget(self.label_ls[i], 0, 0, 1, 5)
 			self.doubleSpinBox_xpos[i] = QtWidgets.QDoubleSpinBox(self.widgets[i])
 			self.doubleSpinBox_xpos[i].setMaximum(1.0)
+			self.doubleSpinBox_xpos[i].setMinimum(0.0)
 			self.doubleSpinBox_xpos[i].setSingleStep(0.1)
 			self.doubleSpinBox_xpos[i].setProperty("value", float(self.lights[8*i]))
 			self.doubleSpinBox_xpos[i].setObjectName("doubleSpinBox_xpos_" + str(i))
 			self.gridLayouts[i].addWidget(self.doubleSpinBox_xpos[i], 1, 2, 1, 1)
 			self.doubleSpinBox_pow[i] = QtWidgets.QDoubleSpinBox(self.widgets[i])
 			self.doubleSpinBox_pow[i].setMaximum(1.0)
+			self.doubleSpinBox_pow[i].setMinimum(0.0)
 			self.doubleSpinBox_pow[i].setSingleStep(0.1)
 			self.doubleSpinBox_pow[i].setProperty("value", float(self.lights[8*i+2]))
 			self.doubleSpinBox_pow[i].setObjectName("doubleSpinBox_pow_"+str(i))
 			self.gridLayouts[i].addWidget(self.doubleSpinBox_pow[i], 2, 4, 1, 1)
 			self.spinBox_ppf[i] = QtWidgets.QSpinBox(self.widgets[i])
 			self.spinBox_ppf[i].setMaximum(2048)
+			self.spinBox_ppf[i].setMinimum(0)
 			self.spinBox_ppf[i].setProperty("value", float(self.lights[8*i+3]))
 			self.spinBox_ppf[i].setObjectName("spinBox_ppf_"+str(i))
 			self.gridLayouts[i].addWidget(self.spinBox_ppf[i], 2, 2, 1, 1)

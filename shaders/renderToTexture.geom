@@ -26,7 +26,7 @@ void main()
 	vec2 p1 = pos1[index].xy;
 	vec2 p2 = pos2[index].xy;
 		
-	vec2 pt = vec2(floor(p1.x), 0);
+	vec2 pt = floor(p1);
 	vec2 p1_out = (p1-pt)*2-1;
 	vec2 p2_out = (p2-pt)*2-1;
 		

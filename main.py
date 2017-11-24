@@ -11,7 +11,7 @@ import sys
 from euclid import *
 import pygame.time
 import pygame
-from shaderProgram import create_program
+from shader_program import create_program
 from util import *
 from win32api import GetSystemMetrics
 
@@ -56,18 +56,18 @@ class Main(QGLWidget):
 		self.surface_params = np.array([1., 5., 5., 1., 2., 0, 0, 0 ],dtype = 'f')
 		to_load_function = surface + '/f.txt'
 		to_load_trafo = surface + '/pos_trafo.txt'
-		concat_files_to_shader("simulationOfPhotons_begin.compute", to_load_function, "simulationOfPhotons_end.compute")
-		concat_files_to_shader("parametricSurface_begin.tes", to_load_function, "parametricSurface_end.tes")
-		concat_files_to_shader("renderToTexture_begin.geom", to_load_trafo, "renderToTexture_end.geom") 
+		concat_files_to_shader("shaders/simulationOfPhotons_begin.compute", to_load_function, "shaders/simulationOfPhotons_end.compute")
+		concat_files_to_shader("shaders/parametricSurface_begin.tes", to_load_function, "shaders/parametricSurface_end.tes")
+		concat_files_to_shader("shaders/renderToTexture_begin.geom", to_load_trafo, "shaders/renderToTexture_end.geom") 
 		
 	def initializeGL(self):
 		pygame.init()
 		print( "Running OpenGL %s.%s" % (glGetInteger(GL_MAJOR_VERSION), glGetInteger(GL_MINOR_VERSION)) )
 		try:
-			self.photon_birth_program		= create_program(compute_file = "birthOfPhotons.compute")
-			self.photon_simulation_program	= create_program(compute_file = "simulationOfPhotons.compute")
-			self.param_program				= create_program(vertex_file = "parametricSurface.vert", fragment_file = "parametricSurface.frag", tess_con_file = "parametricSurface.tcs", tess_eval_file = "parametricSurface.tes")
-			self.texture_program			= create_program(vertex_file = "renderToTexture.vert", fragment_file = "renderToTexture.frag", geom_file = "renderToTexture.geom")
+			self.photon_birth_program		= create_program(compute_file = "shaders/birthOfPhotons.compute")
+			self.photon_simulation_program	= create_program(compute_file = "shaders/simulationOfPhotons.compute")
+			self.param_program				= create_program(vertex_file = "shaders/parametricSurface.vert", fragment_file = "shaders/parametricSurface.frag", tess_con_file = "shaders/parametricSurface.tcs", tess_eval_file = "shaders/parametricSurface.tes")
+			self.texture_program			= create_program(vertex_file = "shaders/renderToTexture.vert", fragment_file = "shaders/renderToTexture.frag", geom_file = "shaders/renderToTexture.geom")
 		except Exception as error:
 			print (error)
 			QtCore.QCoreApplication.quit()
@@ -156,7 +156,8 @@ class Main(QGLWidget):
 		glBindFramebuffer(GL_FRAMEBUFFER, 0)
 		glEnable(GL_DEPTH_TEST)
 		glViewport(0,0, self.size().width(), self.size().height())
-		glClearColor(0.2, 0.3, 0.4, 1)
+		#glClearColor(0.2, 0.3, 0.4, 1)
+		glClearColor(1, 1, 1, 1)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	
 		glUseProgram(self.param_program)
@@ -182,7 +183,7 @@ class Main(QGLWidget):
 		self.fps_delta_time = abs( time.time() - self.fps_last_time )
 		if self.fps_delta_time >= 1:
 			if self.fps_frame_count:
-				self.setWindowTitle( str(1000.0*float(self.fps_delta_time)/self.fps_frame_count) + " ms, " + str(self.fps_frame_count) + " FPS" + " free photons = " + str(self.free_photons))
+				self.setWindowTitle( "Simulation  " + str(1000.0*float(self.fps_delta_time)/self.fps_frame_count) + " ms, " + str(self.fps_frame_count) + " FPS," + " free photons = " + str(self.free_photons))
 			self.fps_frame_count = 0
 			self.fps_last_time = time.time()
 				

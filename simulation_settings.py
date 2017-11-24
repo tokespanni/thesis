@@ -81,6 +81,7 @@ class Simulation_Settings(QtWidgets.QWidget):
 		self.gridLayout_3.addWidget(self.radioButton_tor, 2, 1, 1, 1)
 		self.spinBox_totpho = QtWidgets.QSpinBox(self.gridLayoutWidget_3)
 		self.spinBox_totpho.setMaximum(1048576)
+		self.spinBox_totpho.setMinimum(0)
 		self.spinBox_totpho.setProperty("value", 524288)
 		self.spinBox_totpho.setObjectName("spinBox_totpho")
 		self.gridLayout_3.addWidget(self.spinBox_totpho, 6, 1, 1, 1)
