@@ -111,7 +111,6 @@ class Simulation_Settings(QtWidgets.QWidget):
 		self.radioButton_pla.setText(_translate("Form", "Plane"))
 		self.label_5.setText(_translate("Form", "<html><head/><body><p><span style=\" font-size:12pt;\">Simulation Settings</span></p></body></html>"))
 		self.radioButton_sph.setText(_translate("Form", "Sphere"))
-		#self.radioButton_new.setText(_translate("Form", "New"))
 		self.radioButton_pro.setText(_translate("Form", "Proxy_Circle"))
 		self.radioButton_cyl.setText(_translate("Form", "Cylinder"))
 		self.radioButton_par.setText(_translate("Form", "Paraboloid"))
