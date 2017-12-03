@@ -75,7 +75,7 @@ class Main(QGLWidget):
 
 		self.vaos, self.vbos, self.lightSourceBuffer, self.emptyIndices, self.input_pos, self.output_pos, self.photonBuffer, self.atomic, self.surfaceParamsBuffer = genBuffers(self.light_sources, self.max_photons, self.lightsource_num, self.surface_params)
 		self.fbo_created, self.framebuffer, self.fbo_texture = genFBO(self.fbo_created, self.framebuffer, self.fbo_texture, self.texw, self.texh)
-		glEnable(GL_CULL_FACE)
+		glEnable(GL_CULL_FACE) #hatlapeldobas
 
 	def paintGL(self):
 		#update

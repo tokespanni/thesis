@@ -120,7 +120,7 @@ class Simulation_Settings(QtWidgets.QWidget):
 		
 	def on_radio_button_toggled(self):
 		self.chosen_surface = self.sender()
-			
+	
 			
 	class Updater:
 		def __init__(self, i):
