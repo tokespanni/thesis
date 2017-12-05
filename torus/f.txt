@@ -11,3 +11,5 @@ vec3 ff(vec2 uv)
 	return vec3( (R+r*cos(v*2*pi))*cos(2*pi*u), (R+r*cos(v*2*pi))*sin(2*pi*u), r*sin(2*pi*v) );
 }
 
+
+

@@ -19,8 +19,9 @@ def create_program(vertex_file = None, fragment_file = None, tess_con_file = Non
 	'''
 	Possible function calls:
 	1. vertex_file, fragment_file, tess_con_file and tess_eval_file are not None
-	2. vertex_file and fragment_file are not None
-	3. compute_file is not None
+	2. vertex_file, fragment_file and geom_file are not None
+	3. vertex_file and fragment_file are not None
+	4. compute_file is not None
 	'''
 	program = glCreateProgram()
 	if vertex_file is not None and fragment_file is not None:

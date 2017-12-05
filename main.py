@@ -56,9 +56,24 @@ class Main(QGLWidget):
 		self.surface_params = np.array([1., 5., 5., 1., 2., 0, 0, 0 ],dtype = 'f')
 		to_load_function = surface + '/f.txt'
 		to_load_trafo = surface + '/pos_trafo.txt'
-		concat_files_to_shader("shaders/simulationOfPhotons_begin.compute", to_load_function, "shaders/simulationOfPhotons_end.compute")
-		concat_files_to_shader("shaders/parametricSurface_begin.tes", to_load_function, "shaders/parametricSurface_end.tes")
-		concat_files_to_shader("shaders/renderToTexture_begin.geom", to_load_trafo, "shaders/renderToTexture_end.geom") 
+		try:
+			concat_files_to_shader("shaders/simulationOfPhotons_begin.compute", to_load_function, "shaders/simulationOfPhotons_end.compute")
+		except Exception as error:
+			print (error)
+			QtCore.QCoreApplication.quit()
+			sys.exit()
+		try:
+			concat_files_to_shader("shaders/parametricSurface_begin.tes", to_load_function, "shaders/parametricSurface_end.tes")
+		except Exception as error:
+			print (error)
+			QtCore.QCoreApplication.quit()
+			sys.exit()
+		try:
+			concat_files_to_shader("shaders/renderToTexture_begin.geom", to_load_trafo, "shaders/renderToTexture_end.geom") 
+		except Exception as error:
+			print (error)
+			QtCore.QCoreApplication.quit()
+			sys.exit()
 		
 	def initializeGL(self):
 		pygame.init()

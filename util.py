@@ -3,6 +3,8 @@ from OpenGL.GLU import *
 import numpy as np
 from ctypes import sizeof, c_float, c_void_p, c_int
 import math
+from pathlib2 import Path
+
 
 def c_matrix(matrix):
 	matrixElements = []
@@ -93,6 +95,15 @@ def genFBO(fbo_created, framebuffer, fbo_texture, texw, texh):
 	return fbo_created, framebuffer, fbo_texture
 	
 def concat_files_to_shader(begin, f, end):
+	begin_file = Path(begin)
+	end_file = Path(end)
+	f_file = Path(f)
+	if not begin_file.is_file():
+		raise Exception(str(begin_file) + " is missing, can't generate shader.")
+	if not end_file.is_file():
+		raise Exception(str(end_file) + " is missing, can't generate shader.")
+	if not f_file.is_file():
+		raise Exception(str(f_file) + " is missing, can't generate shader.")
 	filename = begin.split('_')[0]
 	filetype = begin.split('.')[1]
 	with open(filename + '.' + filetype, 'w') as outfile:
